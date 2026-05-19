@@ -1,0 +1,15 @@
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\AuthServiceApplication.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\dto\RegisterRequest.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\service\AuthService.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\exception\GlobalExceptionHandler.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\security\JwtFilter.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\controller\AuthController.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\entity\Role.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\repository\RoleRepository.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\entity\User.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\service\CustomUserDetailsService.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\dto\LoginRequest.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\repository\UserRepository.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\config\SecurityConfig.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\security\JwtUtil.java
+D:\Codes\Nexus_Gateway\auth-service\src\main\java\com\nexus\auth\dto\AuthResponse.java
