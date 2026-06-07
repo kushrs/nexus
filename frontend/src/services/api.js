@@ -66,4 +66,11 @@ export const logsAPI = {
   getAll: () => api.get('/logs'),
 };
 
+// ==================== ML PREDICTIONS ====================
+export const mlAPI = {
+  getPredictions: () => api.get('/logs/ml/predictions'),
+  getAnomalies: () => api.get('/logs/ml/anomalies'),
+  applyPolicy: (data) => api.post('/logs/ml/policies', data),
+};
+
 export default api;

@@ -1,0 +1,150 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-config
+  labels:
+    app.kubernetes.io/part-of: nexus-gateway
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS api_management;
+    USE api_management;
+
+    CREATE TABLE IF NOT EXISTS roles (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        role_name VARCHAR(50)
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100),
+        email VARCHAR(150) UNIQUE,
+        password VARCHAR(255),
+        role_id BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (role_id) REFERENCES roles(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS payments (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        amount DECIMAL(10,2),
+        status VARCHAR(50),
+        user_id BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        message TEXT,
+        type VARCHAR(50),
+        user_id BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS api_logs (
+        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+        request_id VARCHAR(100),
+        endpoint VARCHAR(255),
+        method VARCHAR(20),
+        status_code INT,
+        response_time BIGINT,
+        user_id BIGINT,
+        ip_address VARCHAR(100),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Seed default roles
+    INSERT INTO roles (role_name) VALUES ('ADMIN'), ('USER');
+
+    -- Seed admin user (password: admin123 bcrypt-hashed)
+    INSERT INTO users (name, email, password, role_id)
+    VALUES ('Admin', 'admin@nexus.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 1);
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  labels:
+    app.kubernetes.io/part-of: nexus-gateway
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+    app.kubernetes.io/part-of: nexus-gateway
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None # Headless service for reliable DNS resolution
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+    app.kubernetes.io/part-of: nexus-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: MYSQL_DATABASE
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: mysql-init-volume
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        - name: mysql-init-volume
+          configMap:
+            name: mysql-init-config

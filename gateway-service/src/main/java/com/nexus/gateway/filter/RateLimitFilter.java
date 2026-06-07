@@ -38,37 +38,51 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         // Determine the rate limit key (userId or IP for anonymous)
         String key = resolveKey(exchange);
+        String policyKey = "rate_limit_policy:" + key.substring(RATE_LIMIT_PREFIX.length());
 
-        return redisTemplate.opsForValue()
-                .increment(key)
-                .flatMap(count -> {
-                    if (count == 1) {
-                        // First request in window — set expiry to 1 minute
-                        return redisTemplate.expire(key, Duration.ofMinutes(1))
-                                .then(chain.filter(exchange));
+        return redisTemplate.opsForValue().get(policyKey)
+                .switchIfEmpty(redisTemplate.opsForValue().get("rate_limit_policy:global"))
+                .map(val -> {
+                    try {
+                        return Integer.parseInt(val);
+                    } catch (NumberFormatException e) {
+                        return requestsPerMinute;
                     }
-
-                    if (count > requestsPerMinute) {
-                        log.warn("Rate limit exceeded for key: {} (count: {})", key, count);
-                        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-                        exchange.getResponse().getHeaders()
-                                .add("X-RateLimit-Limit", String.valueOf(requestsPerMinute));
-                        exchange.getResponse().getHeaders()
-                                .add("X-RateLimit-Remaining", "0");
-                        exchange.getResponse().getHeaders()
-                                .add("Retry-After", "60");
+                })
+                .defaultIfEmpty(requestsPerMinute)
+                .flatMap(limit -> {
+                    if (limit <= 0) {
+                        log.warn("Access BLOCKED by AI policy for key: {}", key);
+                        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
                         return exchange.getResponse().setComplete();
                     }
 
-                    // Add rate limit info headers
-                    exchange.getResponse().getHeaders()
-                            .add("X-RateLimit-Limit", String.valueOf(requestsPerMinute));
-                    exchange.getResponse().getHeaders()
-                            .add("X-RateLimit-Remaining",
-                                    String.valueOf(requestsPerMinute - count));
-
-                    return chain.filter(exchange);
+                    return redisTemplate.opsForValue()
+                            .increment(key)
+                            .flatMap(count -> {
+                                if (count == 1) {
+                                    // First request in window — set expiry to 1 minute
+                                    return redisTemplate.expire(key, Duration.ofMinutes(1))
+                                            .then(checkLimitAndHeaders(exchange, chain, count, limit, key));
+                                }
+                                return checkLimitAndHeaders(exchange, chain, count, limit, key);
+                            });
                 });
+    }
+
+    private Mono<Void> checkLimitAndHeaders(ServerWebExchange exchange, GatewayFilterChain chain, Long count, int limit, String key) {
+        if (count > limit) {
+            log.warn("Rate limit exceeded for key: {} (count: {}, limit: {})", key, count, limit);
+            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+            exchange.getResponse().getHeaders().set("X-RateLimit-Limit", String.valueOf(limit));
+            exchange.getResponse().getHeaders().set("X-RateLimit-Remaining", "0");
+            exchange.getResponse().getHeaders().set("Retry-After", "60");
+            return exchange.getResponse().setComplete();
+        }
+
+        exchange.getResponse().getHeaders().set("X-RateLimit-Limit", String.valueOf(limit));
+        exchange.getResponse().getHeaders().set("X-RateLimit-Remaining", String.valueOf(Math.max(0, limit - count)));
+        return chain.filter(exchange);
     }
 
     /**

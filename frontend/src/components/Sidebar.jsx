@@ -5,6 +5,7 @@ const navItems = [
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/payments', label: 'Payments', icon: '💳' },
   { to: '/notifications', label: 'Notifications', icon: '🔔' },
+  { to: '/ai-optimizer', label: 'AI Optimizer', icon: '🤖' },
 ];
 
 export default function Sidebar() {
@@ -46,7 +47,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-white/[0.06]">
         <div className="glass-card p-3 text-center">
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest">Phase 1–4</p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest">Phase 1–6</p>
           <p className="text-xs text-gray-400 mt-1">v1.0.0</p>
         </div>
       </div>

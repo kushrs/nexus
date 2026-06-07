@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Payments from './pages/Payments';
 import Notifications from './pages/Notifications';
+import AiOptimizer from './pages/AiOptimizer';
 
 export default function App() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/users" element={<Users />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/ai-optimizer" element={<AiOptimizer />} />
         </Route>
       </Route>
 

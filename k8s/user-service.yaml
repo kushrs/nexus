@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: nexus-gateway
+spec:
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: user-service
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: nexus-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z mysql 3306; do echo waiting for mysql; sleep 2; done"]
+      containers:
+        - name: user-service
+          image: nexus-user:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql:3306/api_management?useSSL=false&allowPublicKeyRetrieval=true"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key: MYSQL_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key: MYSQL_PASSWORD
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 15
