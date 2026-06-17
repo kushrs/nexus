@@ -3,7 +3,8 @@ package com.nexus.payment.repository;
 import com.nexus.payment.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.UUID;
 
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findByUserId(Long userId);
+public interface PaymentRepository extends JpaRepository<Payment, UUID> {
+    List<Payment> findByUserId(UUID userId);
 }

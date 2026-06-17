@@ -2,24 +2,25 @@ version: '3.8'
 
 services:
   # ==================== INFRASTRUCTURE ====================
-  mysql:
-    image: mysql:8.0
-    container_name: nexus-mysql
+  postgres:
+    image: postgres:15-alpine
+    container_name: nexus-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: api_management
+      POSTGRES_DB: api_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - nexus-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -75,58 +76,109 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_management
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
       JWT_SECRET: bXlTdXBlclNlY3JldEtleUZvckpXVFRva2VuR2VuZXJhdGlvbjIwMjQ=
       JWT_EXPIRATION: 86400000
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     networks:
       - nexus-network
 
-  user-service:
+  # User Service - Instance 1
+  user-service-1:
     build: ./user-service
-    container_name: nexus-user
+    container_name: nexus-user-1
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_management
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     networks:
       - nexus-network
 
-  payment-service:
+  # User Service - Instance 2
+  user-service-2:
+    build: ./user-service
+    container_name: nexus-user-2
+    ports:
+      - "8092:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexus-network
+
+  # Payment Service - Instance 1
+  payment-service-1:
     build: ./payment-service
-    container_name: nexus-payment
+    container_name: nexus-payment-1
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_management
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     networks:
       - nexus-network
 
-  notification-service:
+  # Payment Service - Instance 2
+  payment-service-2:
+    build: ./payment-service
+    container_name: nexus-payment-2
+    ports:
+      - "8093:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexus-network
+
+  # Notification Service - Instance 1
+  notification-service-1:
     build: ./notification-service
-    container_name: nexus-notification
+    container_name: nexus-notification-1
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_management
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
     depends_on:
-      mysql:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexus-network
+
+  # Notification Service - Instance 2
+  notification-service-2:
+    build: ./notification-service
+    container_name: nexus-notification-2
+    ports:
+      - "8094:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+    depends_on:
+      postgres:
         condition: service_healthy
     networks:
       - nexus-network
@@ -137,18 +189,32 @@ services:
     ports:
       - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_management
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/api_management
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      ML_SERVICE_URL: http://ml-service:8000
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - nexus-network
 
+  # ==================== PYTHON ML SERVICE ====================
+  ml-service:
+    build: ./ml-service
+    container_name: nexus-ml-service
+    ports:
+      - "8000:8000"
+    networks:
+      - nexus-network
+
+  # ==================== API GATEWAY ====================
   gateway-service:
     build: ./gateway-service
     container_name: nexus-gateway
@@ -159,21 +225,31 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       AUTH_SERVICE_URL: http://auth-service:8081
-      USER_SERVICE_URL: http://user-service:8082
-      PAYMENT_SERVICE_URL: http://payment-service:8083
-      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      USER_SERVICE_URL: http://user-service-1:8082
+      PAYMENT_SERVICE_URL: http://payment-service-1:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service-1:8084
       LOG_CONSUMER_SERVICE_URL: http://log-consumer-service:8085
+      USER_SERVICE_1_URL: http://user-service-1:8082
+      USER_SERVICE_2_URL: http://user-service-2:8082
+      PAYMENT_SERVICE_1_URL: http://payment-service-1:8083
+      PAYMENT_SERVICE_2_URL: http://payment-service-2:8083
+      NOTIFICATION_SERVICE_1_URL: http://notification-service-1:8084
+      NOTIFICATION_SERVICE_2_URL: http://notification-service-2:8084
     depends_on:
       - auth-service
-      - user-service
-      - payment-service
-      - notification-service
+      - user-service-1
+      - user-service-2
+      - payment-service-1
+      - payment-service-2
+      - notification-service-1
+      - notification-service-2
       - log-consumer-service
       - redis
       - kafka
     networks:
       - nexus-network
 
+  # ==================== FRONTEND DASHBOARD ====================
   frontend:
     build: ./frontend
     container_name: nexus-frontend
@@ -184,8 +260,31 @@ services:
     networks:
       - nexus-network
 
+  # ==================== MONITORING ====================
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: nexus-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gateway-service
+    networks:
+      - nexus-network
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: nexus-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - nexus-network
+
 volumes:
-  mysql_data:
+  postgres_data:
 
 networks:
   nexus-network:

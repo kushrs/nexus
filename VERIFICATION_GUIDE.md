@@ -1,23 +1,26 @@
 # 🧪 Nexus Gateway — End-to-End Verification Guide
 
-This guide provides step-by-step instructions to verify that all systems (API Gateway, JWT Auth, Redis Rate Limiting, Kafka Logging, and the React Frontend / AI Optimizer Dashboard) are fully operational and working together in harmony.
+This guide provides step-by-step instructions to verify that all systems (API Gateway, JWT Auth, Redis Rate Limiting, Kafka Logging, Python ML Service, and the React Frontend / AI Optimizer Dashboard) are fully operational and working together.
 
 ---
 
-## 🛠️ Verification Prerequisite: Tools
-You can run these checks using:
-1. **cURL** (built into Windows PowerShell/Command Prompt)
-2. **Postman** (Desktop application)
-3. **Your Web Browser**
-
-Ensure your Docker containers (or local services) are running before starting.
+## 🛠️ Verification Prerequisite: Running the System
+Ensure Docker Desktop is running, then start all services from the root folder:
+```bash
+docker compose up --build
+```
+Wait 2-3 minutes for compilation, Zookeeper, and Kafka start up. Once ready:
+* **Frontend UI**: [http://localhost:3000](http://localhost:3000)
+* **API Gateway**: [http://localhost:8080](http://localhost:8080)
+* **Python ML Service**: [http://localhost:8000/health](http://localhost:8000/health)
+* **PostgreSQL Database**: Port `5432`, Database: `api_management`, Username: `postgres`, Password: `postgres123`
 
 ---
 
-## 🏃 Step 1: User Registration
-We will register a new user account through the API Gateway, which will route the request to the `auth-service` and persist the user to MySQL.
+## 🏃 Step 1: User Registration (UUID & JWT Verification)
+We will register a new user account through the API Gateway, which will route to `auth-service` and persist the user as a UUID record to PostgreSQL.
 
-Run the following command in your terminal:
+Run the following command:
 ```bash
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
@@ -25,36 +28,22 @@ curl -X POST http://localhost:8080/api/auth/register \
 ```
 
 ### Expected Response:
-A JSON payload containing the user's details and a JWT Token:
+A JSON payload containing the user's UUID `userId` and JWT Token:
 ```json
 {
-  "id": 2,
-  "name": "Alice",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "email": "alice@test.com",
+  "name": "Alice",
   "role": "USER",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "userId": "d748f32a-5730-4e31-89dc-53be6fd4a1d5"
 }
 ```
-*Copy the value of the `"token"` field. You will need it to make authenticated requests.*
+*Copy the value of the `"token"` field.*
 
 ---
 
-## 🔑 Step 2: User Login
-Let's verify that authentication works by exchanging Alice's credentials for a fresh JWT token:
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"alice@test.com\",\"password\":\"alice123\"}"
-```
-
-### Expected Response:
-Another token payload confirming successful credentials matching.
-
----
-
-## 🔒 Step 3: Accessing Protected Endpoints
-Protected endpoints require a valid JWT token. If you request them without a token, or with an invalid token, the API Gateway will block the request and return **`401 Unauthorized`**.
+## 🔒 Step 2: Accessing Protected Endpoints
+Protected endpoints require a valid JWT token.
 
 ### Case A: Request WITHOUT Token (Should Fail)
 ```bash
@@ -72,10 +61,8 @@ curl -i -X GET http://localhost:8080/api/users \
 
 ---
 
-## 🛡️ Step 4: Verifying Redis Rate Limiting
-The gateway is configured with a rate limit of **100 requests per minute** per user, managed inside Redis.
-
-To test this easily, we can simulate a rapid flood of requests using a loop.
+## 🛡️ Step 3: Verifying Redis Rate Limiting
+The gateway rate-limits users to **100 requests per minute**, managed inside Redis.
 
 ### Command (PowerShell):
 Run this in PowerShell to send 110 requests rapidly:
@@ -95,36 +82,35 @@ for ($i=1; $i -le 110; $i++) {
 
 ---
 
-## 📥 Step 5: Verifying Kafka & Database Logs
-Every request going through the API Gateway produces an `ApiLogEvent` to a Kafka topic named `api-log-events`. The `log-consumer-service` consumes this message and saves it to the MySQL database.
+## 📥 Step 4: Verifying Kafka & Database Logs
+Every request routes through the Gateway, producing an `ApiLogEvent` to the Kafka topic `api-log-events`. The `log-consumer-service` consumes this message and saves it to PostgreSQL.
 
 ### Verification Check:
-1. Connect to your MySQL database (Host: `localhost`, Port: `3307`, Database: `api_management`).
+1. Connect to PostgreSQL (Host: `localhost`, Port: `5432`, Database: `api_management`, Username: `postgres`, Password: `postgres123`).
 2. Run this query:
    ```sql
    SELECT * FROM api_logs ORDER BY timestamp DESC LIMIT 5;
    ```
-3. If you see records containing the requests you just made (Alice's requests, endpoints visited, response times), then **Kafka messaging and database persistence are fully operational!**
+3. You should see records matching the requests you made, featuring UUID primary keys and `latency` in milliseconds.
 
 ---
 
-## 📊 Step 6: Verifying React Dashboard & UI
-1. Open your browser and navigate to: **[http://localhost:3000](http://localhost:3000)**.
-2. Login using the administrator credentials:
-   - **Email**: `admin@nexus.com`
-   - **Password**: `admin123`
-3. **Observe the dashboard**:
-   - Check if the metrics (Total Requests, Response Times, Error Rates) are updating in real-time.
-   - You should see the spike of requests you generated in **Step 4** visible in the charts!
+## 🤖 Step 5: Verifying Smart Routing (Load Balancing)
+When a request is made to `/api/users/**`, the Gateway's `SmartRoutingFilter` reads the health scores of the candidate instances (`user-service-1` and `user-service-2`) from Redis:
+$$\text{Health Score} = 0.5 \times \text{Latency Score} + 0.3 \times \text{CPU Score} + 0.2 \times \text{Error Rate Score}$$
+The Gateway forwards the request to the healthiest instance.
+
+Verify load balancing:
+1. Check the logs of `nexus-gateway` during requests. You will see lines like:
+   `Smart Routing selected healthiest instance: user-service-1 with score 100.0`
+2. If `user-service-1` experiences high latency or errors, its health score will decrease, and the Gateway will dynamically switch to `user-service-2`!
 
 ---
 
-## 🤖 Step 7: Verifying the AI Traffic Optimizer
-1. Inside the dashboard, navigate to the **AI Optimizer** page from the sidebar.
-2. Look at the graphs:
-   - **Traffic Forecasting**: Ensure it plots a predicted traffic slope (calculated via linear regression based on your request activity).
-   - **Anomalies Table**: If you performed the rate limiting test (Step 4), you should see anomalies flagged (e.g. high request counts or traffic bursts) with details about the offending IP address.
-3. **Enforce a Policy**:
-   - Find a flagged IP address/User.
-   - Click **Throttle** or **Block IP**.
-   - Verify that a dynamic rule is set up, which pushes the block policy to Redis and instantly halts further requests from that source.
+## 🤖 Step 6: Verifying the Python ML Service & AI Optimizer
+1. Inside the dashboard, navigate to the **AI Optimizer** page.
+2. The dashboard calls `log-consumer-service` at `/logs/ml/predictions`, which requests predictions from the Python ML service on port 8000.
+3. The Python ML service computes:
+   - **Overload Probability**: Using a `RandomForestRegressor` trained on system metrics (requests, latency, CPU/memory, error rate).
+   - **Anomalies**: Using an `IsolationForest` model to detect system behavior shifts.
+4. Verify that these predictions show on the graphs and anomalies appear flagged (like high request bursts or system overloads).

@@ -10,10 +10,6 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
-/**
- * JWT utility for token validation at the gateway level.
- * Shares the same secret key with auth-service.
- */
 @Component
 public class JwtUtil {
 
@@ -24,9 +20,6 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
-    /**
-     * Extract all claims from a JWT token.
-     */
     public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -35,9 +28,6 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    /**
-     * Validate token: check signature and expiration.
-     */
     public boolean validateToken(String token) {
         try {
             Claims claims = extractAllClaims(token);
@@ -51,8 +41,9 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
-    public Long extractUserId(String token) {
-        return extractAllClaims(token).get("userId", Long.class);
+    public String extractUserId(String token) {
+        Object val = extractAllClaims(token).get("userId");
+        return val != null ? val.toString() : null;
     }
 
     public String extractRole(String token) {

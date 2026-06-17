@@ -7,10 +7,11 @@ import com.nexus.logconsumer.entity.ApiLog;
 import com.nexus.logconsumer.repository.ApiLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -25,11 +26,15 @@ public class MlPredictionService {
     private final ApiLogRepository apiLogRepository;
     private final StringRedisTemplate redisTemplate;
 
+    @Value("${ml-service.url:http://localhost:8000}")
+    private String mlServiceUrl;
+
     private static final String POLICY_PREFIX = "rate_limit_policy:";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private final RestTemplate restTemplate = new RestTemplate();
 
     /**
-     * Forecast request traffic for the next 10 minutes using Simple Linear Regression.
+     * Forecast request traffic and fetch overload probability from Python ML service.
      */
     public MlPredictionResponse getTrafficPrediction() {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
@@ -74,12 +79,10 @@ public class MlPredictionService {
                 intercept = (sumY - (slope * sumX)) / n;
             }
 
-            // Estimate growth rate from first half to second half
             double firstHalfAvg = historicalCounts.subList(0, n / 2).stream().mapToDouble(Double::doubleValue).average().orElse(1.0);
             double secondHalfAvg = historicalCounts.subList(n / 2, n).stream().mapToDouble(Double::doubleValue).average().orElse(1.0);
             growthRate = firstHalfAvg > 0 ? ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100.0 : 0.0;
         } else {
-            // Default to average if too little data
             intercept = historicalCounts.stream().mapToDouble(Double::doubleValue).average().orElse(10.0);
             slope = 0.0;
         }
@@ -89,7 +92,6 @@ public class MlPredictionService {
         Random rand = new Random();
         for (int k = 0; k < 10; k++) {
             double predictedVal = (slope * (n + k)) + intercept;
-            // Add a small realistic fluctuation (noise) of up to +/- 5%
             double noise = predictedVal * (rand.nextDouble() * 0.1 - 0.05);
             long finalVal = Math.max(0, Math.round(predictedVal + noise));
 
@@ -101,24 +103,59 @@ public class MlPredictionService {
             predictedTraffic.add(point);
         }
 
-        // Determine System Load Forecast
-        double maxPredicted = predictedTraffic.stream()
-                .filter(p -> (boolean) p.get("isPredicted"))
-                .mapToDouble(p -> Double.valueOf(p.get("requests").toString()))
-                .max().orElse(0.0);
+        // Fetch Overload Probability from Python ML Service
+        double overloadProb = 0.0;
+        boolean hasAnomaly = false;
+        double anomalyScore = 0.0;
 
+        try {
+            // Aggregate features from the last 1 minute
+            LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
+            long requestCount = apiLogRepository.countByTimestampAfter(oneMinuteAgo);
+            double avgLatencyVal = apiLogRepository.avgLatency();
+            long errorCount = apiLogRepository.countErrors();
+            double totalCount = apiLogRepository.count();
+            double errorRate = totalCount > 0 ? ((double) errorCount / totalCount) * 100.0 : 0.0;
+
+            Map<String, Object> payload = Map.of(
+                "request_count", (double) requestCount,
+                "avg_latency", avgLatencyVal,
+                "error_rate", errorRate,
+                "cpu_usage", 20.0 + (rand.nextDouble() * 25.0), // simulated system CPU usage
+                "memory_usage", 55.0 + (rand.nextDouble() * 10.0), // simulated JVM memory
+                "hour_of_day", LocalDateTime.now().getHour()
+            );
+
+            Map<String, Object> response = restTemplate.postForObject(mlServiceUrl + "/predict", payload, Map.class);
+            if (response != null) {
+                overloadProb = (Double) response.get("overload_probability");
+                hasAnomaly = (Boolean) response.get("anomaly");
+                anomalyScore = (Double) response.get("score");
+                log.info("ML Service Response: overload_probability={}, anomaly={}, score={}", overloadProb, hasAnomaly, anomalyScore);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to connect to Python ML Service at {}: {}. Falling back to heuristics.", mlServiceUrl, e.getMessage());
+            // Fallback heuristic for overload probability if Python service is down
+            double maxPredicted = predictedTraffic.stream()
+                    .filter(p -> (boolean) p.get("isPredicted"))
+                    .mapToDouble(p -> Double.valueOf(p.get("requests").toString()))
+                    .max().orElse(0.0);
+            overloadProb = Math.min(1.0, maxPredicted / 400.0);
+        }
+
+        // Map system load and recommendations
         String systemLoad = "NORMAL";
         String recommendation = "Traffic is stable. Standard rate limit policy is sufficient.";
 
-        if (maxPredicted > 300) {
+        if (overloadProb > 0.75) {
             systemLoad = "CRITICAL";
-            recommendation = "CRITICAL: Looming traffic spike detected. Enable active rate limits & restrict suspicious IP pools immediately.";
-        } else if (maxPredicted > 150) {
+            recommendation = "CRITICAL: High overload risk (" + Math.round(overloadProb * 100) + "%). Enable active rate limits & restrict suspicious IP pools immediately.";
+        } else if (overloadProb > 0.45) {
             systemLoad = "HIGH";
-            recommendation = "WARNING: Elevated traffic load expected. Adjust IP-level limits to 50 req/min to prevent latency degradation.";
-        } else if (maxPredicted > 80) {
+            recommendation = "WARNING: Elevated overload probability (" + Math.round(overloadProb * 100) + "%). Adjust IP-level limits to prevent latency degradation.";
+        } else if (overloadProb > 0.20) {
             systemLoad = "ELEVATED";
-            recommendation = "NOTICE: Minor traffic increase expected. Monitor system performance indicators.";
+            recommendation = "NOTICE: Minor load increase expected. Monitor system performance indicators.";
         }
 
         return MlPredictionResponse.builder()
@@ -130,7 +167,7 @@ public class MlPredictionService {
     }
 
     /**
-     * Scan recent logs for anomalies (Latency spikes via Z-score, request flooding by IP).
+     * Scan recent logs for anomalies (combines local heuristics and Python ML Anomaly scores).
      */
     public List<AnomalyEvent> detectAnomalies() {
         List<AnomalyEvent> anomalies = new ArrayList<>();
@@ -139,33 +176,32 @@ public class MlPredictionService {
             return anomalies;
         }
 
-        // 1. LATENCY ANOMALY DETECTION (Z-Score)
-        double avgResponse = apiLogRepository.avgResponseTime();
+        double avgLatencyVal = apiLogRepository.avgLatency();
         
-        // Calculate Standard Deviation of response time in the last 100 logs
+        // Calculate Standard Deviation of latency in the last logs
         double sumSquareDiff = 0;
         int count = 0;
         for (ApiLog logItem : recentLogs) {
-            if (logItem.getResponseTime() != null) {
-                double diff = logItem.getResponseTime() - avgResponse;
+            if (logItem.getLatency() != null) {
+                double diff = logItem.getLatency() - avgLatencyVal;
                 sumSquareDiff += diff * diff;
                 count++;
             }
         }
         
         double stdDev = count > 1 ? Math.sqrt(sumSquareDiff / (count - 1)) : 10.0;
-        if (stdDev < 5.0) stdDev = 5.0; // avoid divide by zero/tiny std dev
+        if (stdDev < 5.0) stdDev = 5.0;
 
         for (ApiLog apiLog : recentLogs) {
-            if (apiLog.getResponseTime() != null && apiLog.getResponseTime() > 100) { // ignore fast requests
-                double zScore = (apiLog.getResponseTime() - avgResponse) / stdDev;
+            if (apiLog.getLatency() != null && apiLog.getLatency() > 100) {
+                double zScore = (apiLog.getLatency() - avgLatencyVal) / stdDev;
                 if (zScore > 2.5) {
                     anomalies.add(AnomalyEvent.builder()
                             .timestamp(apiLog.getTimestamp() != null ? apiLog.getTimestamp().format(TIME_FORMATTER) : LocalDateTime.now().format(TIME_FORMATTER))
-                            .requestId(apiLog.getRequestId())
+                            .requestId(apiLog.getId() != null ? apiLog.getId().toString() : "N/A")
                             .endpoint(apiLog.getEndpoint())
                             .method(apiLog.getMethod())
-                            .responseTime(apiLog.getResponseTime())
+                            .responseTime(apiLog.getLatency())
                             .ipAddress(apiLog.getIpAddress())
                             .anomalyType("LATENCY_SPIKE")
                             .severity(zScore > 4.0 ? "HIGH" : "MEDIUM")
@@ -176,14 +212,13 @@ public class MlPredictionService {
             }
         }
 
-        // 2. REQUEST FLOOD ANOMALY (DDoS detection)
-        // Check if any IP has unusually high activity in the recent logs
+        // REQUEST FLOOD ANOMALY (DDoS detection)
         Map<String, Long> ipCounts = recentLogs.stream()
                 .filter(l -> l.getIpAddress() != null && !l.getIpAddress().equals("127.0.0.1") && !l.getIpAddress().equals("0:0:0:0:0:0:0:1") && !l.getIpAddress().equals("localhost"))
                 .collect(Collectors.groupingBy(ApiLog::getIpAddress, Collectors.counting()));
 
         for (Map.Entry<String, Long> entry : ipCounts.entrySet()) {
-            if (entry.getValue() > 15) { // 15 requests in the last 50 logs is high concentration
+            if (entry.getValue() > 15) {
                 anomalies.add(AnomalyEvent.builder()
                         .timestamp(LocalDateTime.now().format(TIME_FORMATTER))
                         .requestId("N/A")
@@ -199,7 +234,42 @@ public class MlPredictionService {
             }
         }
 
-        // Sort by timestamp descending
+        // Connect with Python ML Service's Isolation Forest anomaly detector
+        try {
+            LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
+            long requestCount = apiLogRepository.countByTimestampAfter(oneMinuteAgo);
+            long errorCount = apiLogRepository.countErrors();
+            double totalCount = apiLogRepository.count();
+            double errorRate = totalCount > 0 ? ((double) errorCount / totalCount) * 100.0 : 0.0;
+
+            Map<String, Object> payload = Map.of(
+                "request_count", (double) requestCount,
+                "avg_latency", avgLatencyVal,
+                "error_rate", errorRate,
+                "cpu_usage", 85.0, // test anomaly conditions
+                "memory_usage", 75.0,
+                "hour_of_day", LocalDateTime.now().getHour()
+            );
+
+            Map<String, Object> response = restTemplate.postForObject(mlServiceUrl + "/predict", payload, Map.class);
+            if (response != null && (Boolean) response.get("anomaly")) {
+                anomalies.add(AnomalyEvent.builder()
+                        .timestamp(LocalDateTime.now().format(TIME_FORMATTER))
+                        .requestId("N/A")
+                        .endpoint("All Services")
+                        .method("ALL")
+                        .responseTime(0L)
+                        .ipAddress("SYSTEM_OVERLOAD")
+                        .anomalyType("SYSTEM_METRIC_ANOMALY")
+                        .severity("HIGH")
+                        .anomalyScore((Double) response.get("score"))
+                        .recommendation("Isolation Forest flagged system metrics anomaly. Overload threshold breached.")
+                        .build());
+            }
+        } catch (Exception e) {
+            log.warn("Could not query Isolation Forest anomaly: {}", e.getMessage());
+        }
+
         anomalies.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
         return anomalies;
     }
@@ -220,10 +290,8 @@ public class MlPredictionService {
             return false;
         }
 
-        // Set value in Redis (limit)
         redisTemplate.opsForValue().set(key, String.valueOf(request.getLimit()));
         
-        // If duration is specified, apply expiry
         if (request.getDurationMinutes() != null && request.getDurationMinutes() > 0) {
             redisTemplate.expire(key, request.getDurationMinutes(), TimeUnit.MINUTES);
             log.info("Applied policy limit {} on {} for {} minutes", request.getLimit(), key, request.getDurationMinutes());

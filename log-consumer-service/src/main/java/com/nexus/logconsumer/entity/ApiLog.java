@@ -3,6 +3,7 @@ package com.nexus.logconsumer.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "api_logs")
@@ -12,11 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ApiLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "request_id", length = 100)
-    private String requestId;
+    private UUID id;
 
     @Column(length = 255)
     private String endpoint;
@@ -24,17 +21,16 @@ public class ApiLog {
     @Column(length = 20)
     private String method;
 
+    private Long latency;
+
     @Column(name = "status_code")
     private Integer statusCode;
 
-    @Column(name = "response_time")
-    private Long responseTime;
-
-    @Column(name = "user_id")
-    private Long userId;
-
     @Column(name = "ip_address", length = 100)
     private String ipAddress;
+
+    @Column(name = "user_id")
+    private UUID userId;
 
     @Column(name = "timestamp")
     private LocalDateTime timestamp;

@@ -2,15 +2,16 @@ package com.nexus.payment.dto;
 
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentDTO {
-    private Long id;
+    private UUID id;
     private BigDecimal amount;
     private String status;
-    private Long userId;
+    private UUID userId;
     private String createdAt;
 }

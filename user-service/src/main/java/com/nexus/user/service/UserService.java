@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,7 +22,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public UserDTO getUserById(Long id) {
+    public UserDTO getUserById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return toDTO(user);
@@ -31,21 +32,21 @@ public class UserService {
         User user = User.builder()
                 .name(dto.getName())
                 .email(dto.getEmail())
-                .roleId(dto.getRoleId() != null ? dto.getRoleId() : 2L)
+                .role(dto.getRole() != null ? dto.getRole() : "USER")
                 .build();
         return toDTO(userRepository.save(user));
     }
 
-    public UserDTO updateUser(Long id, UserDTO dto) {
+    public UserDTO updateUser(UUID id, UserDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        if (dto.getRoleId() != null) user.setRoleId(dto.getRoleId());
+        if (dto.getRole() != null) user.setRole(dto.getRole());
         return toDTO(userRepository.save(user));
     }
 
-    public void deleteUser(Long id) {
+    public void deleteUser(UUID id) {
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("User not found with id: " + id);
         }
@@ -57,7 +58,7 @@ public class UserService {
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .roleId(user.getRoleId())
+                .role(user.getRole())
                 .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null)
                 .build();
     }

@@ -31,11 +31,11 @@ public class JwtUtil {
     /**
      * Generate a JWT token with user claims.
      */
-    public String generateToken(String email, Long userId, String role) {
+    public String generateToken(String email, java.util.UUID userId, String role) {
         return Jwts.builder()
                 .subject(email)
                 .claims(Map.of(
-                        "userId", userId,
+                        "userId", userId.toString(),
                         "role", role
                 ))
                 .issuedAt(new Date())

@@ -15,6 +15,10 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: authServiceCircuitBreaker
+                fallbackUri: forward:/fallback/auth-service
 
         # User Service - PROTECTED
         - id: user-service
@@ -23,6 +27,10 @@ spring:
             - Path=/api/users/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
 
         # Payment Service - PROTECTED
         - id: payment-service
@@ -31,6 +39,10 @@ spring:
             - Path=/api/payments/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: paymentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/payment-service
 
         # Notification Service - PROTECTED
         - id: notification-service
@@ -39,6 +51,10 @@ spring:
             - Path=/api/notifications/**
           filters:
             - StripPrefix=1
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCircuitBreaker
+                fallbackUri: forward:/fallback/notification-service
 
         # Log Consumer Service (Dashboard API) - PROTECTED
         - id: log-consumer-service
@@ -81,7 +97,23 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
+
+# Smart Routing Configuration
+smart-routing:
+  services:
+    user-service:
+      instances:
+        - ${USER_SERVICE_1_URL:http://localhost:8082}
+        - ${USER_SERVICE_2_URL:http://localhost:8092}
+    payment-service:
+      instances:
+        - ${PAYMENT_SERVICE_1_URL:http://localhost:8083}
+        - ${PAYMENT_SERVICE_2_URL:http://localhost:8093}
+    notification-service:
+      instances:
+        - ${NOTIFICATION_SERVICE_1_URL:http://localhost:8084}
+        - ${NOTIFICATION_SERVICE_2_URL:http://localhost:8094}
 
 logging:
   level:

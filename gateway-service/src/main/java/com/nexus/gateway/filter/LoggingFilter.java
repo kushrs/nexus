@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -13,18 +14,13 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-/**
- * Global Logging Filter that captures every request/response through the gateway.
- * 
- * Produces ApiLogEvent messages to Kafka for async processing by log-consumer-service.
- * Records: endpoint, method, status code, response time, user info, IP address.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class LoggingFilter implements GlobalFilter, Ordered {
 
     private final KafkaTemplate<String, ApiLogEvent> kafkaTemplate;
+    private final ReactiveStringRedisTemplate redisTemplate;
 
     private static final String TOPIC = "api-log-events";
 
@@ -35,7 +31,6 @@ public class LoggingFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 
-        // Store requestId for tracing
         exchange.getAttributes().put("requestId", requestId);
 
         return chain.filter(exchange)
@@ -45,8 +40,21 @@ public class LoggingFilter implements GlobalFilter, Ordered {
                             ? exchange.getResponse().getStatusCode().value()
                             : 500;
 
-                    Long userId = exchange.getAttribute("userId");
+                    String userId = exchange.getAttribute("userId");
                     String ip = extractClientIp(exchange);
+
+                    // Track metrics per service instance in Redis
+                    String targetInstance = exchange.getAttribute("targetInstance");
+                    if (targetInstance != null) {
+                        String countKey = "metrics:" + targetInstance + ":request_count";
+                        String latencyKey = "metrics:" + targetInstance + ":latency_sum";
+                        String errorKey = "metrics:" + targetInstance + ":error_count";
+
+                        redisTemplate.opsForValue().increment(countKey)
+                                .then(redisTemplate.opsForValue().increment(latencyKey, responseTime))
+                                .then(statusCode >= 400 ? redisTemplate.opsForValue().increment(errorKey) : Mono.empty())
+                                .subscribe(null, ex -> log.error("Failed to update instance metrics in Redis: {}", ex.getMessage()));
+                    }
 
                     ApiLogEvent event = ApiLogEvent.builder()
                             .requestId(requestId)
@@ -59,16 +67,18 @@ public class LoggingFilter implements GlobalFilter, Ordered {
                             .timestamp(System.currentTimeMillis())
                             .build();
 
-                    // Send to Kafka asynchronously
                     kafkaTemplate.send(TOPIC, requestId, event)
                             .whenComplete((result, ex) -> {
                                 if (ex != null) {
                                     log.error("Failed to send log event to Kafka: {}", ex.getMessage());
                                 }
+                              else {
+                                log.debug("Sent log event to Kafka for request: {}", requestId);
+                              }
                             });
 
-                    log.info("[{}] {} {} -> {} ({}ms, user: {})",
-                            requestId, method, path, statusCode, responseTime, userId);
+                    log.info("[{}] {} {} -> {} ({}ms, user: {}, instance: {})",
+                            requestId, method, path, statusCode, responseTime, userId, targetInstance);
                 }));
     }
 
@@ -83,7 +93,6 @@ public class LoggingFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // Highest priority to wrap the entire request lifecycle
         return Ordered.HIGHEST_PRECEDENCE;
     }
 }

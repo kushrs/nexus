@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "notifications")
@@ -13,8 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Notification {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(columnDefinition = "TEXT")
     private String message;
@@ -23,7 +24,7 @@ public class Notification {
     private String type;
 
     @Column(name = "user_id")
-    private Long userId;
+    private UUID userId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

@@ -1,15 +1,16 @@
 package com.nexus.user.dto;
 
 import lombok.*;
+import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-    private Long id;
+    private UUID id;
     private String name;
     private String email;
-    private Long roleId;
+    private String role;
     private String createdAt;
 }

@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
@@ -14,8 +15,8 @@ import java.time.LocalDateTime;
 @Builder
 public class Payment {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(precision = 10, scale = 2)
     private BigDecimal amount;
@@ -24,7 +25,7 @@ public class Payment {
     private String status;
 
     @Column(name = "user_id")
-    private Long userId;
+    private UUID userId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

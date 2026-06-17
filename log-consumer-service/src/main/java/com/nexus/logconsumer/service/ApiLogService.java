@@ -27,13 +27,29 @@ public class ApiLogService {
      * Persist a log event received from Kafka.
      */
     public void saveLogEvent(ApiLogEvent event) {
+        UUID id;
+        try {
+            id = UUID.fromString(event.getRequestId());
+        } catch (Exception e) {
+            id = UUID.randomUUID();
+        }
+
+        UUID uId = null;
+        if (event.getUserId() != null && !event.getUserId().trim().isEmpty() && !"null".equalsIgnoreCase(event.getUserId())) {
+            try {
+                uId = UUID.fromString(event.getUserId());
+            } catch (Exception e) {
+                log.warn("Invalid user ID string: {}", event.getUserId());
+            }
+        }
+
         ApiLog apiLog = ApiLog.builder()
-                .requestId(event.getRequestId())
+                .id(id)
                 .endpoint(event.getEndpoint())
                 .method(event.getMethod())
                 .statusCode(event.getStatusCode())
-                .responseTime(event.getResponseTime())
-                .userId(event.getUserId())
+                .latency(event.getResponseTime())
+                .userId(uId)
                 .ipAddress(event.getIpAddress())
                 .timestamp(LocalDateTime.ofInstant(
                         Instant.ofEpochMilli(event.getTimestamp()),
@@ -49,7 +65,7 @@ public class ApiLogService {
      */
     public DashboardStats getDashboardStats() {
         long totalRequests = apiLogRepository.count();
-        double avgResponseTime = apiLogRepository.avgResponseTime();
+        double avgResponseTime = apiLogRepository.avgLatency();
         long totalErrors = apiLogRepository.countErrors();
         double errorRate = totalRequests > 0 ? (double) totalErrors / totalRequests * 100 : 0;
 
@@ -98,11 +114,11 @@ public class ApiLogService {
     private ApiLogDTO toDTO(ApiLog log) {
         return ApiLogDTO.builder()
                 .id(log.getId())
-                .requestId(log.getRequestId())
+                .requestId(log.getId() != null ? log.getId().toString() : null)
                 .endpoint(log.getEndpoint())
                 .method(log.getMethod())
                 .statusCode(log.getStatusCode())
-                .responseTime(log.getResponseTime())
+                .latency(log.getLatency())
                 .userId(log.getUserId())
                 .ipAddress(log.getIpAddress())
                 .timestamp(log.getTimestamp() != null ? log.getTimestamp().toString() : null)

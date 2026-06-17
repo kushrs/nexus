@@ -3,9 +3,7 @@ package com.nexus.auth.service;
 import com.nexus.auth.dto.AuthResponse;
 import com.nexus.auth.dto.LoginRequest;
 import com.nexus.auth.dto.RegisterRequest;
-import com.nexus.auth.entity.Role;
 import com.nexus.auth.entity.User;
-import com.nexus.auth.repository.RoleRepository;
 import com.nexus.auth.repository.UserRepository;
 import com.nexus.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +23,6 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -39,29 +36,25 @@ public class AuthService {
             throw new RuntimeException("Email already registered: " + request.getEmail());
         }
 
-        // Assign default USER role
-        Role userRole = roleRepository.findByRoleName("USER")
-                .orElseThrow(() -> new RuntimeException("Default USER role not found"));
-
-        // Create and save user with hashed password
+        // Create and save user with hashed password and default USER role
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(userRole)
+                .role("USER")
                 .build();
 
         user = userRepository.save(user);
         log.info("User registered: {}", user.getEmail());
 
         // Generate JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole().getRoleName());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole());
 
         return AuthResponse.builder()
                 .token(token)
                 .email(user.getEmail())
                 .name(user.getName())
-                .role(user.getRole().getRoleName())
+                .role(user.getRole())
                 .userId(user.getId())
                 .build();
     }
@@ -80,7 +73,7 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Generate JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole().getRoleName());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole());
 
         log.info("User logged in: {}", user.getEmail());
 
@@ -88,7 +81,22 @@ public class AuthService {
                 .token(token)
                 .email(user.getEmail())
                 .name(user.getName())
-                .role(user.getRole().getRoleName())
+                .role(user.getRole())
+                .userId(user.getId())
+                .build();
+    }
+
+    /**
+     * Fetch profile details of the authenticated user.
+     */
+    public AuthResponse getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        return AuthResponse.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(user.getRole())
                 .userId(user.getId())
                 .build();
     }

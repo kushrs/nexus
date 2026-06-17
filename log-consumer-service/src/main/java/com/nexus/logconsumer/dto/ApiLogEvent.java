@@ -16,7 +16,7 @@ public class ApiLogEvent implements Serializable {
     private String method;
     private int statusCode;
     private long responseTime;
-    private Long userId;
+    private String userId;
     private String ipAddress;
     private long timestamp;
 }

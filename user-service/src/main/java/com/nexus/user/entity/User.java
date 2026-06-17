@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -13,8 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(length = 100)
     private String name;
@@ -24,8 +25,8 @@ public class User {
 
     private String password;
 
-    @Column(name = "role_id")
-    private Long roleId;
+    @Column(nullable = false, length = 50)
+    private String role;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
