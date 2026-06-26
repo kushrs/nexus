@@ -1,143 +1,117 @@
 # 🚀 Nexus Gateway — AI-Powered Smart API Gateway & Traffic Optimization System
 
-Enterprise-grade distributed microservice system with an API Gateway, JWT Authentication, Redis Rate Limiting, Kafka Logging, and a Monitoring Dashboard.
+Enterprise-grade distributed microservice system featuring an API Gateway, JWT Authentication, Redis Rate Limiting, Kafka Logging, a Python FastAPI Machine Learning Engine (RandomForest load forecasting & IsolationForest anomaly detection), and a real-time React Analytics Dashboard.
 
 ---
 
-## 📐 Architecture & Port Mapping
+## 🍽️ The Restaurant Analogy (How it Works)
 
+To make it simple, think of the **Nexus** system as a busy premium restaurant:
+
+1. **The Customer (Client / Browser)**: You sit at a table and place orders, check profiles, or request notifications.
+2. **The Head Waiter (API Gateway - :8080)**: Intercepts all requests.
+   * **Verification**: Checks your VIP card (JWT Token) before serving you (**401 Unauthorized** if missing).
+   * **Anti-Spam**: Prevents you from placing more than 100 orders in a single minute (**429 Too Many Requests** if exceeded).
+3. **The Kitchen Stations (Microservices)**: 
+   * **Bread Station (`user-service`)**: Staffed by two chefs (Chef A/Instance 1 on `:8082` and Chef B/Instance 2 on `:8092`) to handle heavy load.
+   * **Dessert Station (`payment-service`)**: Processes payments.
+   * **Drink Station (`notification-service`)**: Dispatches alerts.
+4. **The Head Waiter's Clipboard (Smart Routing)**: The Head Waiter reads a clipboard (**Redis Cache**) showing how fast Chef A and Chef B are cooking. If Chef A gets slow or drops a plate, the waiter dynamically routes new orders to Chef B.
+5. **The Order Ticket Machine (Kafka + Log Consumer)**: Every taken order prints a ticket onto a conveyor belt (**Kafka Broker**). A helper (**Log Consumer Service - :8085**) files them in the restaurant's records cabinet (**PostgreSQL Database - :5432**) without slowing down the waiters.
+6. **The Restaurant Analyst (Python ML Service - :8000)**: Reads database logs to forecast Friday night crowds (**RandomForest Traffic Forecast**) and detect table pranks (**IsolationForest anomaly detection** for request floods or response timeouts).
+7. **The Owner's Monitor (React Dashboard - :3000)**: A real-time screen showing how many orders are processed, average chef response speed, error rates, and red warning indicators when the AI analyst detects spam.
+
+---
+
+## 📐 Architecture & Data Flow
+
+```mermaid
+graph TD
+    Client[Dashboard UI - Port 3000] -->|1. Requests| Gateway[API Gateway - Port 8080]
+    
+    subgraph Gateway Traffic Control
+        Gateway --> Auth[Verify JWT Token]
+        Auth --> RateLimit[Check Redis Rate Limit]
+        RateLimit --> Routing[Decide Healthiest Instance]
+    end
+    
+    Routing -->|Route Traffic| User1[User Service - Instance 1]
+    Routing -->|Route Traffic| User2[User Service - Instance 2]
+    Routing -->|Route Traffic| AuthSrv[Auth Service]
+    
+    Gateway -->|2. Asynchronously logs request details| Kafka[Kafka Message Broker]
+    Kafka -->|3. Consumes Log Event| LogConsumer[Log Consumer Service]
+    LogConsumer -->|4. Persists Log Data| DB[(PostgreSQL Database)]
+    
+    LogConsumer -->|5. Sends logs to evaluate| ML[Python ML Service - Port 8000]
+    ML -->|6. Calculates predictions & anomalies| LogConsumer
+    LogConsumer -->|7. Feeds statistics back| Client
 ```
-┌──────────────┐     ┌─────────────────────────────────────┐
-│   Frontend   │────▶│         API Gateway (:8080)          │
-│  React App   │     │  JWT Filter → Rate Limit → Logging  │
-│   (:3000)    │     └──┬──────┬──────┬──────┬──────┬──────┘
-│              │        │      │      │      │      │
-└──────────────┘     ┌──▼───┐┌──▼───┐┌──▼───┐┌──▼───┐┌──▼───┐
-                     │ Auth ││ User ││ Pay  ││Notif ││ Logs  │
-                     │:8081 ││:8082 ││:8083 ││:8084 ││:8085  │
-                     └──┬───┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘
-                        │       │       │       │       │
-                     ┌──▼───────▼───────▼───────▼───────▼───┐
-                     │            MySQL (:3307)             │
-                     └──────────────────────────────────────┘
-                     ┌──────────┐  ┌────────────────────────┐
-                     │  Redis   │  │   Kafka + Zookeeper    │
-                     │ (:6379)  │  │ (:9092)       (:2181)  │
-                     └──────────┘  └────────────────────────┘
-```
 
-### 📦 Services Directory & Port Matrix
+---
 
-| Service | Host Port | Internal Docker Port | Description |
+## 📦 Service Port Matrix
+
+| Service Name | Host Port | Internal Port | Description |
 | :--- | :--- | :--- | :--- |
-| **frontend** | `3000` | `80` | React monitoring dashboard & configuration UI |
-| **gateway-service** | `8080` | `8080` | Spring Cloud Gateway (filters JWT, Redis Rate Limit, produces Kafka Logs) |
-| **auth-service** | `8081` | `8081` | Core Identity & Authentication (Register, Login, JWT issuing) |
-| **user-service** | `8082` | `8082` | Account & profile management |
-| **payment-service** | `8083` | `8083` | Transactions processing service |
-| **notification-service**| `8084` | `8084` | User messaging & dispatch system |
-| **log-consumer-service**| `8085` | `8085` | Kafka consumer + AI Anomaly/Forecasting + Dashboard API |
-| **MySQL Database** | `3307` | `3306` | Persistent relational store *(Mapped to 3307 on host to avoid port conflict)* |
-| **Redis Cache** | `6379` | `6379` | Token bucket rate limiting cache & dynamic policies store |
-| **Apache Kafka** | `9092` | `29092` | Event broker for gateway request logs |
-| **Zookeeper** | `2181` | `2181` | Kafka coordination service |
-
----
-
-## 🛠️ Prerequisites & Installation
-
-Depending on how you wish to run the project, install the following tools:
-
-### Option A: Running with Docker (Recommended)
-If you want to run everything isolated in containers, you only need:
-1. **Docker Desktop**: [Download here](https://www.docker.com/products/docker-desktop/) (includes Docker Compose).
-
-### Option B: Running Locally (Without Docker)
-If you have slow internet or want to run services directly on your host machine, install:
-1. **Java Development Kit (JDK) 21**: [Download here](https://adoptium.net/temurin/releases/?version=21) (Ensure `JAVA_HOME` environment variable is set).
-2. **Apache Maven 3.8+**: [Download here](https://maven.apache.org/download.cgi) (Ensure added to your system `PATH`).
-3. **Node.js LTS (v20+)**: [Download here](https://nodejs.org/) (Includes `npm`).
-4. **MySQL Community Server 8.0**: [Download here](https://dev.mysql.com/downloads/mysql/).
-5. **Redis Server** (For Windows, you can run it via WSL, or download a native port like Memurai or Redis-Windows).
-6. **Apache Kafka & Zookeeper**: [Download here](https://kafka.apache.org/downloads).
+| **frontend** | `3000` | `80` | React analytics dashboard & admin UI |
+| **gateway-service** | `8080` | `8080` | Spring Cloud Gateway (circuit breakers, rate limiting, logging) |
+| **auth-service** | `8081` | `8081` | Core identity, UUID registration, and JWT creation |
+| **user-service-1** | `8082` | `8082` | User profile service (Instance 1) |
+| **user-service-2** | `8092` | `8082` | User profile service (Instance 2) |
+| **payment-service-1** | `8083` | `8083` | Transactions service (Instance 1) |
+| **payment-service-2** | `8093` | `8083` | Transactions service (Instance 2) |
+| **notification-service-1**| `8084` | `8084` | User alert and notification dispatch (Instance 1) |
+| **notification-service-2**| `8094` | `8084` | User alert and notification dispatch (Instance 2) |
+| **log-consumer-service**| `8085` | `8085` | Kafka consumer + ML orchestrator + Dashboard backend |
+| **ml-service** | `8000` | `8000` | FastAPI Python service (RandomForest & IsolationForest) |
+| **postgres** | `5432` | `5432` | PostgreSQL relational persistent database |
+| **redis** | `6379` | `6379` | Redis cache for rate limiting, health scores, and dynamic policies |
+| **kafka** | `9092` | `9092` | Apache Kafka message broker |
+| **zookeeper** | `2181` | `2181` | Kafka cluster coordination manager |
+| **prometheus** | `9090` | `9090` | Time-series scraper for actuator metrics |
+| **grafana** | `3001` | `3000` | Metrics dashboard visualizer (admin/admin) |
 
 ---
 
 ## 🚀 How to Run the Application
 
-### 🐳 Method 1: Using Docker Compose (Quickest)
+The entire multi-service stack is optimized to run inside Docker with shared dependency caching to speed up the builds by up to 10x.
 
-Since Docker builds everything inside container environments, you only need to run:
-
-1. **Start all services**:
+### Steps to Start:
+1. Ensure **Docker Desktop** is open and running on your host machine.
+2. Open a terminal at the project root folder.
+3. Run the startup command:
    ```bash
    docker compose up --build
    ```
-2. **Verify it is running**:
-   Wait 2-3 minutes. Once the terminal stops outputting compilation logs and you see logs like `Tomcat started on port(s)...` and `partitions assigned: [api-log-events-0]`, everything is up!
-3. **Access points**:
-   - **Frontend UI Dashboard**: [http://localhost:3000](http://localhost:3000)
-   - **API Gateway**: [http://localhost:8080](http://localhost:8080)
-   - **MySQL database (from Host)**: Host: `localhost`, Port: `3307`, User: `root`, Password: `root123`, DB: `api_management`
-
----
-
-### 💻 Method 2: Running Locally (No Docker)
-
-If you need to bypass Docker downloads, follow this setup sequence:
-
-#### Step 1: Start Infrastructure Dependencies
-Ensure your local databases and message brokers are started:
-1. Start your local **MySQL Server** (on port `3306`). Create a database named `api_management`:
-   ```sql
-   CREATE DATABASE api_management;
-   ```
-2. Start your local **Redis Server** (on port `6379`).
-3. Start **Zookeeper** and then **Kafka** (broker on port `9092`).
-
-#### Step 2: Configure Environment Override
-Since your local databases are running on their default ports, you do not need to change anything! The Spring Boot services are pre-configured to fall back to `localhost` defaults if they are run outside of Docker.
-
-#### Step 3: Run Backend Services (Start in 6 Separate Terminals)
-Run the following Maven commands in order:
-```bash
-# 1. Start Auth Service
-cd auth-service && mvn spring-boot:run
-
-# 2. Start User Service
-cd ../user-service && mvn spring-boot:run
-
-# 3. Start Payment Service
-cd ../payment-service && mvn spring-boot:run
-
-# 4. Start Notification Service
-cd ../notification-service && mvn spring-boot:run
-
-# 5. Start Log Consumer & AI Analytics Service
-cd ../log-consumer-service && mvn spring-boot:run
-
-# 6. Start API Gateway (Run last)
-cd ../gateway-service && mvn spring-boot:run
-```
-
-#### Step 4: Run the React Frontend (In a 7th Terminal)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Wait 2-3 minutes for compilation, dependencies downloads, and container health checks to report healthy.
+5. Open your browser and navigate to **[http://localhost:3000](http://localhost:3000)**.
 
 ---
 
 ## 🔑 Default Credentials
-To access the dashboard or authenticate requests, use the seeded administrator credentials:
-* **Admin Email**: `admin@nexus.com`
+
+To authenticate requests or log into the dashboard:
+* **Email**: `admin@nexus.com`
 * **Password**: `admin123`
 
 ---
 
-## 🧪 Verification & End-to-End Testing
-To verify that the system is fully operational (e.g. Gateway routes requests, generates JWTs, applies rate limits, logs to Kafka, and updates the AI Optimizer dashboard), please read the step-by-step verification guide:
+## 📊 Understanding Dashboard Metrics
+
+1. **Total Requests**: The aggregate number of requests that have crossed the API Gateway.
+2. **Req / Minute (RPM)**: Live speed of traffic currently hitting the gateway.
+3. **Avg Response (ms)**: The average time taken by your backend microservices to respond.
+4. **Error Rate (%)**: Tracks transaction failure rates. Blocks caused by rate-limiting (**`429 Too Many Requests`**) are logged as errors here to help you identify active attacks or abusive clients.
+5. **Requests Per Minute Chart**: A graphical timeline displaying live load and request spikes.
+6. **Top APIs Chart**: Visualizes load distributions, showing which microservice receives the most traffic.
+7. **Recent Requests Table**: Audit trail displaying Request ID (UUID), HTTP Method, Endpoint, Status Code, User ID, and Client IP.
+
+---
+
+## 🧪 E2E Verification & Testing
+
+To run verification scripts for JWT auth validation, simulate rate-limits (exceeding 100 req/min), inspect database telemetry logs, or evaluate ML forecasts, refer to the step-by-step testing instructions:
 
 👉 **[VERIFICATION_GUIDE.md](./VERIFICATION_GUIDE.md)**
