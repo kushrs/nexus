@@ -9,6 +9,7 @@ import Users from './pages/Users';
 import Payments from './pages/Payments';
 import Notifications from './pages/Notifications';
 import AiOptimizer from './pages/AiOptimizer';
+import Topology from './pages/Topology';
 
 export default function App() {
   const { user } = useAuth();
@@ -21,10 +22,11 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ai-optimizer" element={<AiOptimizer />} />
+          <Route path="/topology" element={<Topology />} />
           <Route path="/users" element={<Users />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/ai-optimizer" element={<AiOptimizer />} />
         </Route>
       </Route>
 
