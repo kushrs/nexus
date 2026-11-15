@@ -3,692 +3,354 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus Gateway — Project Defense & Technical Presentation</title>
+  <title>Nexus Gateway — Simple Project Defense Slides</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .slide {
-      display: none;
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-    }
-    .slide.active {
-      display: flex;
-      opacity: 1;
-    }
-    .glow-card {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 1rem;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .slide { display: none; opacity: 0; transition: opacity 0.25s ease; }
+    .slide.active { display: flex; opacity: 1; }
+    .card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1rem; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-indigo-500/30 selection:text-white">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between select-none">
 
-  <!-- Top Progress Bar & Header -->
-  <header class="w-full border-b border-white/[0.08] bg-slate-900/60 backdrop-blur-xl px-6 py-3 flex items-center justify-between z-30">
+  <!-- Top Bar -->
+  <header class="w-full bg-slate-900/80 backdrop-blur border-b border-white/[0.08] px-6 py-3.5 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-bold text-white text-sm shadow-md">
-        N
-      </div>
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">N</div>
       <div>
-        <h1 class="text-sm font-bold text-white tracking-tight">Nexus Gateway</h1>
-        <p class="text-[10px] text-slate-400 font-mono tracking-wider uppercase">PROJECT DEFENSE &amp; TECHNICAL PRESENTATION</p>
+        <h1 class="text-sm font-bold text-white">Nexus Gateway</h1>
+        <p class="text-[10px] text-slate-400 font-mono uppercase">Quick &amp; Simple Project Defense Deck</p>
       </div>
     </div>
 
-    <!-- Slide Tracker & Controls -->
-    <div class="flex items-center gap-4">
-      <span id="slideCounter" class="text-xs font-mono text-slate-300 bg-white/[0.05] border border-white/[0.1] px-3 py-1 rounded-full">
-        Slide 1 / 11
+    <!-- Navigation Controls -->
+    <div class="flex items-center gap-3">
+      <span id="slideCounter" class="text-xs font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full font-bold">
+        Slide 1 / 6
       </span>
-      <div class="flex items-center gap-1.5">
-        <button onclick="prevSlide()" class="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 hover:text-white border border-white/[0.08] transition text-xs font-mono">
-          ◀ Prev
-        </button>
-        <button onclick="nextSlide()" class="p-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition text-xs font-mono shadow-md">
-          Next ▶
-        </button>
-      </div>
-      <button onclick="toggleNotes()" id="notesToggleBtn" class="text-xs font-mono text-slate-400 hover:text-white px-2 py-1 rounded border border-white/[0.08] hover:bg-white/[0.05]">
-        Notes [N]
+      <button onclick="prevSlide()" class="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono border border-white/[0.08]">
+        ◀ Back
+      </button>
+      <button onclick="nextSlide()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-bold shadow">
+        Next ▶
       </button>
     </div>
   </header>
 
-  <!-- Progress Line -->
+  <!-- Progress Bar -->
   <div class="w-full bg-slate-800 h-1">
-    <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 h-1 transition-all duration-300" style="width: 9.09%;"></div>
+    <div id="progressBar" class="bg-indigo-500 h-1 transition-all duration-300" style="width: 16.66%;"></div>
   </div>
 
-  <!-- Slides Viewport -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 flex flex-col justify-center">
+  <!-- Main Slide Viewport -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-6 md:p-10 flex flex-col justify-center">
 
-    <!-- SLIDE 1: Title & Executive Overview -->
-    <section class="slide active flex-col justify-center items-center text-center space-y-6 py-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        ENTERPRISE CLOUD CONTROL PLANE
-      </div>
-      
-      <h2 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl">
+    <!-- SLIDE 1: Title & Pitch -->
+    <section class="slide active flex-col items-center text-center space-y-6">
+      <span class="px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-mono font-bold">
+        PROJECT PRESENTATION
+      </span>
+      <h2 class="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
         Nexus Gateway
       </h2>
-      <p class="text-xl md:text-2xl font-light text-slate-300 max-w-3xl">
-        AI-Powered Smart API Gateway, Reactive Microservices Mesh &amp; Predictive Traffic Optimization Suite
+      <p class="text-xl text-slate-300 max-w-2xl font-light">
+        An AI-Powered Smart API Gateway that protects microservices, stops server crashes, and optimizes traffic in real time.
       </p>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl w-full pt-4 font-mono text-xs">
-        <div class="glow-card p-3 text-center">
-          <span class="text-slate-400 block text-[10px]">REACTIVE INGRESS</span>
-          <span class="text-indigo-400 font-bold">Spring Cloud Gateway</span>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl pt-4 text-xs font-mono">
+        <div class="card p-3 text-center">
+          <span class="text-slate-400 block text-[10px]">ENTRY POINT</span>
+          <span class="text-indigo-400 font-bold">Port :8080</span>
         </div>
-        <div class="glow-card p-3 text-center">
-          <span class="text-slate-400 block text-[10px]">EVENT PIPELINE</span>
-          <span class="text-sky-400 font-bold">Apache Kafka 7.5</span>
+        <div class="card p-3 text-center">
+          <span class="text-slate-400 block text-[10px]">SECURITY</span>
+          <span class="text-emerald-400 font-bold">JWT Tokens</span>
         </div>
-        <div class="glow-card p-3 text-center">
-          <span class="text-slate-400 block text-[10px]">RATE LIMITING</span>
-          <span class="text-emerald-400 font-bold">Redis Token Bucket</span>
+        <div class="card p-3 text-center">
+          <span class="text-slate-400 block text-[10px]">PROTECTION</span>
+          <span class="text-sky-400 font-bold">Redis Rate Limit</span>
         </div>
-        <div class="glow-card p-3 text-center">
-          <span class="text-slate-400 block text-[10px]">MACHINE LEARNING</span>
-          <span class="text-purple-400 font-bold">FastAPI Scikit-Learn</span>
+        <div class="card p-3 text-center">
+          <span class="text-slate-400 block text-[10px]">INTELLIGENCE</span>
+          <span class="text-purple-400 font-bold">Python AI / ML</span>
         </div>
       </div>
     </section>
 
-    <!-- SLIDE 2: Question 1: Project Objective & Real-World Problem -->
-    <section class="slide flex-col space-y-6">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 1 OF 5</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Main Objective &amp; Real-World Problem Solved</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs font-mono">CORE VISION</span>
+    <!-- SLIDE 2: Question 1 -->
+    <section class="slide flex-col space-y-5">
+      <div class="border-b border-white/[0.08] pb-3">
+        <span class="text-xs font-mono text-indigo-400 font-bold">QUESTION 1</span>
+        <h2 class="text-2xl font-bold text-white">Main Objective &amp; Real-World Problem Solved</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="glow-card p-6 space-y-4">
-          <h3 class="text-lg font-semibold text-rose-400 flex items-center gap-2">
-            <span>🛑</span> The Real-World Pain Points
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- The Problem -->
+        <div class="card p-5 space-y-3 border-rose-500/20">
+          <h3 class="text-base font-bold text-rose-400 flex items-center gap-2">
+            <span>❌</span> The Real-World Problems
           </h3>
           <ul class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <li class="flex items-start gap-2">
               <span class="text-rose-400 font-bold">•</span>
-              <div>
-                <strong class="text-white">Microservice Sprawl &amp; Ingress Chaos:</strong> Clients interacting directly with backend services suffer from tight coupling, exposed ports, and duplicated auth logic across every repo.
-              </div>
+              <div><strong>No Central Security:</strong> Clients call microservices directly, exposing internal ports and duplicating login code everywhere.</div>
             </li>
             <li class="flex items-start gap-2">
               <span class="text-rose-400 font-bold">•</span>
-              <div>
-                <strong class="text-white">Failures of "Dumb" Load Balancing:</strong> Standard round-robin blindly pushes traffic to servers with high latency or exhausted thread pools, causing cascading cluster outages.
-              </div>
+              <div><strong>Dumb Load Balancing:</strong> Standard systems send traffic to slow or crashing servers without checking their health.</div>
             </li>
             <li class="flex items-start gap-2">
               <span class="text-rose-400 font-bold">•</span>
-              <div>
-                <strong class="text-white">Reactive Rate Limiting:</strong> Standard rate limiters only kick in <em>after</em> a server is already failing under sudden surges or volumetric DDoS attacks.
-              </div>
+              <div><strong>Surprise Crashes:</strong> Traditional rate limits only react <em>after</em> the server is already down from high traffic.</div>
             </li>
           </ul>
         </div>
 
-        <div class="glow-card p-6 space-y-4 border-indigo-500/30">
-          <h3 class="text-lg font-semibold text-emerald-400 flex items-center gap-2">
-            <span>🎯</span> Nexus Gateway's Solved State
+        <!-- The Solution -->
+        <div class="card p-5 space-y-3 border-emerald-500/20">
+          <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+            <span>✔</span> What Nexus Gateway Does
           </h3>
           <ul class="space-y-3 text-xs text-slate-300 leading-relaxed">
             <li class="flex items-start gap-2">
-              <span class="text-emerald-400 font-bold">✔</span>
-              <div>
-                <strong class="text-white">Unified Zero-Trust Edge:</strong> Centralized Netty reverse proxy validates stateless HMAC-SHA256 JWTs and propagates identities downstream.
-              </div>
+              <span class="text-emerald-400 font-bold">•</span>
+              <div><strong>Single Secure Door (:8080):</strong> All requests pass through one gateway that verifies JWT tokens before touching services.</div>
             </li>
             <li class="flex items-start gap-2">
-              <span class="text-emerald-400 font-bold">✔</span>
-              <div>
-                <strong class="text-white">Smart Health-Weighted Routing:</strong> Algorithm scores instances by latency, CPU, and errors, routing only to optimal servers.
-              </div>
+              <span class="text-emerald-400 font-bold">•</span>
+              <div><strong>Smart Health Routing:</strong> Gateway checks latency and CPU, automatically routing requests to the fastest server.</div>
             </li>
             <li class="flex items-start gap-2">
-              <span class="text-emerald-400 font-bold">✔</span>
-              <div>
-                <strong class="text-white">Proactive AI Traffic Shaping:</strong> ML pipeline projects traffic 10 minutes in advance and automatically injects Redis throttling rules.
-              </div>
+              <span class="text-emerald-400 font-bold">•</span>
+              <div><strong>AI Predictive Defense:</strong> Predicts traffic spikes 10 minutes ahead and blocks abusive IPs before servers overload.</div>
             </li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- SLIDE 3: Key Innovations & Value Proposition -->
-    <section class="slide flex-col space-y-6">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">INNOVATION MATRIX</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">System Innovations &amp; Measurable Value</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs font-mono">BENCHMARKS</span>
+    <!-- SLIDE 3: Question 2 -->
+    <section class="slide flex-col space-y-5">
+      <div class="border-b border-white/[0.08] pb-3">
+        <span class="text-xs font-mono text-indigo-400 font-bold">QUESTION 2</span>
+        <h2 class="text-2xl font-bold text-white">Why Did You Choose This Specific Tech Stack?</h2>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div class="glow-card p-5 space-y-2">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">01</div>
-          <h3 class="text-sm font-semibold text-white">Sub-50ms Gateway Ingress</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Non-blocking asynchronous Netty event loops minimize proxy latency. Logging is fire-and-forget to Kafka, ensuring audit trails never block response delivery.
-          </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+        <div class="card p-4 space-y-1.5">
+          <span class="text-indigo-400 font-mono font-bold block text-sm">Spring Cloud Gateway</span>
+          <p class="text-slate-300">Fast, non-blocking Netty engine. Can handle tens of thousands of requests per second without crashing.</p>
         </div>
 
-        <div class="glow-card p-5 space-y-2">
-          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-sm">02</div>
-          <h3 class="text-sm font-semibold text-white">Zero-Downtime Policy Tuning</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Operators and AI models can inject live rate limits per IP, User UUID, or Global traffic directly into Redis with automatic TTL expiration—no server reboots required.
-          </p>
+        <div class="card p-4 space-y-1.5">
+          <span class="text-emerald-400 font-mono font-bold block text-sm">Redis</span>
+          <p class="text-slate-300">Ultra-fast in-memory cache. Checks rate limits (100 req/min) in less than 1 millisecond.</p>
         </div>
 
-        <div class="glow-card p-5 space-y-2">
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">03</div>
-          <h3 class="text-sm font-semibold text-white">High Availability Pairing</h3>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            All high-traffic microservices deploy in dual-replica pairs (e.g. user-service-1 &amp; 2). If a replica experiences degradation, traffic instantly shifts 100% to its peer.
-          </p>
+        <div class="card p-4 space-y-1.5">
+          <span class="text-sky-400 font-mono font-bold block text-sm">Apache Kafka</span>
+          <p class="text-slate-300">High-speed event broker. Sends logs in the background without slowing down the user's request.</p>
+        </div>
+
+        <div class="card p-4 space-y-1.5">
+          <span class="text-purple-400 font-mono font-bold block text-sm">Python (FastAPI + AI)</span>
+          <p class="text-slate-300">Industry standard for machine learning. Runs Random Forest to forecast traffic and catch anomaly attacks.</p>
+        </div>
+
+        <div class="card p-4 space-y-1.5">
+          <span class="text-amber-400 font-mono font-bold block text-sm">PostgreSQL (UUIDs)</span>
+          <p class="text-slate-300">Reliable SQL database. Uses random UUIDs so hackers cannot guess sequential user IDs.</p>
+        </div>
+
+        <div class="card p-4 space-y-1.5">
+          <span class="text-rose-400 font-mono font-bold block text-sm">React 18 Dashboard</span>
+          <p class="text-slate-300">Modern live control plane to inspect requests, view AI forecasts, and manage security rules.</p>
         </div>
       </div>
     </section>
 
-    <!-- SLIDE 4: Question 2: Technology Stack Justification -->
+    <!-- SLIDE 4: Question 3 -->
     <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 2 OF 5</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Technology Stack Justification &amp; Rationale</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-sky-500/20 text-sky-300 text-xs font-mono">ENGINEERING CHOICES</span>
+      <div class="border-b border-white/[0.08] pb-3">
+        <span class="text-xs font-mono text-indigo-400 font-bold">QUESTION 3</span>
+        <h2 class="text-2xl font-bold text-white">System Architecture &amp; Data Flow</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
-        <div class="glow-card p-4 space-y-2">
-          <div class="flex justify-between items-center text-indigo-400 font-bold">
-            <span>Spring Cloud Gateway (Netty)</span>
-            <span class="text-[10px] text-slate-400">EDGE GATEWAY</span>
-          </div>
-          <p class="text-slate-300 font-sans leading-relaxed">
-            Reactive non-blocking I/O powered by Project Reactor. Handles tens of thousands of concurrent connections with low memory footprint compared to thread-per-request Tomcat servlets.
-          </p>
+      <!-- Flow steps -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs font-mono">
+        <div class="card p-3 text-center space-y-1">
+          <span class="text-indigo-400 font-bold block text-sm">1. Request</span>
+          <span class="text-slate-300 text-[11px] font-sans">User sends API request to port :8080.</span>
         </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <div class="flex justify-between items-center text-sky-400 font-bold">
-            <span>Apache Kafka 7.5 &amp; Zookeeper</span>
-            <span class="text-[10px] text-slate-400">EVENT BROKER</span>
-          </div>
-          <p class="text-slate-300 font-sans leading-relaxed">
-            Enterprise event streaming handling 100,000+ msgs/sec. Decouples request logging from the gateway's critical path, completely eliminating database write bottlenecks.
-          </p>
+        <div class="card p-3 text-center space-y-1">
+          <span class="text-emerald-400 font-bold block text-sm">2. JWT Check</span>
+          <span class="text-slate-300 text-[11px] font-sans">Gateway checks token (blocks if invalid).</span>
         </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <div class="flex justify-between items-center text-emerald-400 font-bold">
-            <span>Redis 7 (In-Memory Engine)</span>
-            <span class="text-[10px] text-slate-400">CACHE &amp; THROTTLING</span>
-          </div>
-          <p class="text-slate-300 font-sans leading-relaxed">
-            Sub-millisecond latency for distributed token-bucket counters (100 RPM limit) and transient policy overrides backed by native key expiration (TTL).
-          </p>
+        <div class="card p-3 text-center space-y-1">
+          <span class="text-sky-400 font-bold block text-sm">3. Rate Limit</span>
+          <span class="text-slate-300 text-[11px] font-sans">Redis counts hits (429 if &gt;100 RPM).</span>
         </div>
+        <div class="card p-3 text-center space-y-1">
+          <span class="text-purple-400 font-bold block text-sm">4. Smart Route</span>
+          <span class="text-slate-300 text-[11px] font-sans">Sends to healthiest replica (User 1 or 2).</span>
+        </div>
+        <div class="card p-3 text-center space-y-1">
+          <span class="text-amber-400 font-bold block text-sm">5. Async Log</span>
+          <span class="text-slate-300 text-[11px] font-sans">Kafka logs event; AI updates forecast.</span>
+        </div>
+      </div>
 
-        <div class="glow-card p-4 space-y-2">
-          <div class="flex justify-between items-center text-purple-400 font-bold">
-            <span>FastAPI + Scikit-Learn</span>
-            <span class="text-[10px] text-slate-400">AI PREDICTION</span>
-          </div>
-          <p class="text-slate-300 font-sans leading-relaxed">
-            Python ecosystem enables state-of-the-art RandomForest regression for 10-minute traffic load forecasting and IsolationForest for multivariate anomaly and outlier detection.
-          </p>
+      <!-- Simple Architecture Box -->
+      <div class="card p-4 text-center font-mono text-xs space-y-2">
+        <div class="text-slate-400 text-[11px]">SMART ROUTING FORMULA:</div>
+        <div class="text-indigo-300 font-bold text-sm bg-slate-900 py-2 rounded-lg border border-white/[0.08]">
+          Health Score = (0.5 × Latency) + (0.3 × CPU Health) + (0.2 × Error Free Rate)
+        </div>
+        <div class="text-[11px] text-slate-400 font-sans">
+          Traffic automatically routes to whichever instance has the highest health score.
         </div>
       </div>
     </section>
 
-    <!-- SLIDE 5: Question 3: System Architecture Blueprint -->
+    <!-- SLIDE 5: Question 4 -->
     <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 3 OF 5</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">System Architecture Blueprint</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-mono">TOPOLOGY</span>
+      <div class="border-b border-white/[0.08] pb-3">
+        <span class="text-xs font-mono text-indigo-400 font-bold">QUESTION 4</span>
+        <h2 class="text-2xl font-bold text-white">Major Technical Challenges &amp; How We Fixed Them</h2>
       </div>
 
-      <div class="glow-card p-4 flex flex-col items-center justify-center font-mono text-[11px] space-y-3">
-        <div class="px-4 py-2 rounded-lg bg-sky-500/20 border border-sky-500/30 text-sky-300 font-bold">
-          React Control Plane (:3000)
-        </div>
-        <div class="text-slate-500">▼ Ingress REST API</div>
-        <div class="w-full max-w-2xl px-5 py-3 rounded-xl bg-indigo-950/40 border border-indigo-500/40 text-center space-y-1">
-          <div class="text-indigo-300 font-bold">API GATEWAY (:8080)</div>
-          <div class="text-[10px] text-slate-400 font-sans">
-            JWT Auth Filter ➔ Redis Rate Limiter ➔ Smart Routing (Health Weighted) ➔ Async Kafka Logging
+      <div class="space-y-3.5 text-xs">
+        <div class="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="space-y-1 md:w-1/2">
+            <span class="text-rose-400 font-bold block">Challenge 1: Slow Database Logging</span>
+            <p class="text-slate-300">Writing logs straight to the DB slowed requests from 15ms to 1,200ms during load tests.</p>
+          </div>
+          <div class="md:w-1/2 bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-lg">
+            <span class="text-emerald-400 font-bold block">✔ Solution</span>
+            <p class="text-slate-300">Used Apache Kafka to stream logs in the background with zero user wait time.</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-3xl pt-2">
-          <div class="p-2 rounded bg-surface-900 border border-white/[0.08] text-center">
-            <span class="text-slate-400 text-[10px] block">IDENTITY</span>
-            <span class="text-white font-bold">Auth (:8081)</span>
+        <div class="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="space-y-1 md:w-1/2">
+            <span class="text-rose-400 font-bold block">Challenge 2: Lost User Info in Reactive Gateway</span>
+            <p class="text-slate-300">Standard Spring Security lost user details because Netty switches worker threads.</p>
           </div>
-          <div class="p-2 rounded bg-surface-900 border border-white/[0.08] text-center">
-            <span class="text-slate-400 text-[10px] block">ACCOUNTS (HA)</span>
-            <span class="text-emerald-400 font-bold">User (:8082, :8092)</span>
-          </div>
-          <div class="p-2 rounded bg-surface-900 border border-white/[0.08] text-center">
-            <span class="text-slate-400 text-[10px] block">PAYMENTS (HA)</span>
-            <span class="text-white font-bold">Pay (:8083, :8093)</span>
-          </div>
-          <div class="p-2 rounded bg-surface-900 border border-white/[0.08] text-center">
-            <span class="text-slate-400 text-[10px] block">ALERTS (HA)</span>
-            <span class="text-white font-bold">Notif (:8084, :8094)</span>
+          <div class="md:w-1/2 bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-lg">
+            <span class="text-emerald-400 font-bold block">✔ Solution</span>
+            <p class="text-slate-300">Extracted JWT claims directly and injected them into downstream request headers.</p>
           </div>
         </div>
 
-        <div class="w-full max-w-3xl flex justify-between gap-3 pt-2 text-[10px]">
-          <div class="flex-1 p-2 rounded bg-slate-900/80 border border-white/[0.06] text-center text-slate-300">
-            PostgreSQL 15 (:5432)
+        <div class="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="space-y-1 md:w-1/2">
+            <span class="text-rose-400 font-bold block">Challenge 3: UUID Migration Crash</span>
+            <p class="text-slate-300">Switching from numeric IDs to UUIDs caused frontend forms to crash with NaN errors.</p>
           </div>
-          <div class="flex-1 p-2 rounded bg-slate-900/80 border border-white/[0.06] text-center text-slate-300">
-            Redis Cache (:6379)
-          </div>
-          <div class="flex-1 p-2 rounded bg-slate-900/80 border border-white/[0.06] text-center text-slate-300">
-            Apache Kafka (:9092)
-          </div>
-          <div class="flex-1 p-2 rounded bg-slate-900/80 border border-white/[0.06] text-center text-purple-300">
-            Python ML Engine (:8000)
+          <div class="md:w-1/2 bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-lg">
+            <span class="text-emerald-400 font-bold block">✔ Solution</span>
+            <p class="text-slate-300">Updated backend DTOs to UUID and built user dropdown pickers in the UI.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- SLIDE 6: Question 3: End-to-End Data Flow -->
+    <!-- SLIDE 6: Question 5 -->
     <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 3 (CONT.)</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">End-to-End Ingress Request Lifecycle</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs font-mono">6-STEP FLOW</span>
+      <div class="border-b border-white/[0.08] pb-3">
+        <span class="text-xs font-mono text-indigo-400 font-bold">QUESTION 5</span>
+        <h2 class="text-2xl font-bold text-white">Key Limitations &amp; Future Scope</h2>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs font-sans">
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-indigo-400 font-mono font-bold">Step 1: Ingress Route Match</div>
-          <p class="text-slate-300 text-[11px]">Client calls Gateway at /api/*. Gateway matches route predicates and strips prefixes for downstream routing.</p>
-        </div>
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-sky-400 font-mono font-bold">Step 2: Stateless JWT Filter</div>
-          <p class="text-slate-300 text-[11px]">Validates Bearer token signature. Rejects unauthorized calls with 401; mutates request headers with user claims.</p>
-        </div>
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-emerald-400 font-mono font-bold">Step 3: Redis Rate Limiting</div>
-          <p class="text-slate-300 text-[11px]">Token bucket evaluates IP/User request counts. If quota exceeded, short-circuits with 429 Too Many Requests.</p>
-        </div>
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-purple-400 font-mono font-bold">Step 4: Smart Instance Routing</div>
-          <p class="text-slate-300 text-[11px]">Calculates health scores across instance pairs and forwards request to the healthiest available node.</p>
-        </div>
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-amber-400 font-mono font-bold">Step 5: Upstream Processing</div>
-          <p class="text-slate-300 text-[11px]">Microservice executes business logic against PostgreSQL using UUID keys and returns response payload.</p>
-        </div>
-        <div class="glow-card p-4 space-y-1">
-          <div class="text-rose-400 font-mono font-bold">Step 6: Async Kafka Stream</div>
-          <p class="text-slate-300 text-[11px]">Gateway logs latency and metadata to Kafka topic api-log-events; log-consumer updates ML models.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- SLIDE 7: Question 3: Smart Routing & AI Models -->
-    <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 3 (ALGORITHMS)</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Smart Routing Formula &amp; Machine Learning</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 text-xs font-mono">AI ENGINE</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="glow-card p-6 space-y-4">
-          <h3 class="text-base font-semibold text-sky-400">Dynamic Health Score Algorithm</h3>
-          <div class="p-3.5 rounded-lg bg-slate-900 border border-white/[0.1] font-mono text-sm text-indigo-300 text-center">
-            Health Score = 0.5(Latency) + 0.3(CPU) + 0.2(Errors)
-          </div>
-          <ul class="text-xs text-slate-300 space-y-2">
-            <li><strong>Latency (50%):</strong> Normalized inverse response time (&lt;50ms = 100).</li>
-            <li><strong>CPU (30%):</strong> Actuator metrics inverse utilization.</li>
-            <li><strong>Errors (20%):</strong> Proportion of 2xx/3xx vs 4xx/5xx responses.</li>
-            <li><strong>Automatic Shift:</strong> If node score drops &lt;40, 100% traffic fails over.</li>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Limitations -->
+        <div class="card p-5 space-y-3 border-amber-500/20">
+          <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
+            <span>⚠️</span> Current Limitations
+          </h3>
+          <ul class="space-y-2.5 text-xs text-slate-300 leading-relaxed">
+            <li><strong>Single Broker:</strong> Dev setup uses single Redis and Kafka containers (needs cluster for enterprise scale).</li>
+            <li><strong>AI Cold Start:</strong> Model needs 5 minutes of initial traffic logs to learn patterns after a fresh restart.</li>
+            <li><strong>Flat Token Cost:</strong> Light requests and heavy database searches both cost 1 rate limit token.</li>
           </ul>
         </div>
 
-        <div class="glow-card p-6 space-y-4">
-          <h3 class="text-base font-semibold text-purple-400">Dual Machine Learning Models</h3>
-          <div class="space-y-3 text-xs">
-            <div class="p-3 rounded-lg bg-surface-900 border border-white/[0.06]">
-              <span class="text-white font-bold block">1. RandomForestRegressor (Traffic Horizon)</span>
-              <span class="text-slate-400">Models nonlinear historical traffic patterns to project request rates 10 minutes in advance with overload probabilities.</span>
-            </div>
-            <div class="p-3 rounded-lg bg-surface-900 border border-white/[0.06]">
-              <span class="text-white font-bold block">2. IsolationForest (Unsupervised Outliers)</span>
-              <span class="text-slate-400">Detects multi-dimensional anomalies (Z-score latency surges, unusual request burst densities, DDoS patterns).</span>
-            </div>
-          </div>
+        <!-- Future Scope -->
+        <div class="card p-5 space-y-3 border-emerald-500/20">
+          <h3 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+            <span>🚀</span> Future Scope &amp; Roadmap
+          </h3>
+          <ul class="space-y-2.5 text-xs text-slate-300 leading-relaxed">
+            <li><strong>K8s Predictive Auto-scaling:</strong> Spin up new server pods <em>before</em> traffic peaks hit using AI forecasts.</li>
+            <li><strong>Zero-Trust Service Mesh (mTLS):</strong> Encrypt all internal communication between microservices.</li>
+            <li><strong>Weighted Rate Limiting:</strong> Charge more tokens for expensive database queries.</li>
+          </ul>
         </div>
-      </div>
-    </section>
-
-    <!-- SLIDE 8: Question 4: Technical Challenges & Bug Fixes -->
-    <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 4 OF 5</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Major Technical Challenges &amp; Solutions</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 text-xs font-mono">DEBUGGING &amp; FIXES</span>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div class="glow-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div class="space-y-1 md:max-w-md">
-            <span class="text-rose-400 font-mono font-bold block">Challenge 1: Reactive WebFlux vs. ThreadLocal</span>
-            <p class="text-slate-300">Gateway runs Netty event loops where requests hop worker threads. ThreadLocal security context was lost.</p>
-          </div>
-          <div class="space-y-1 md:max-w-md bg-emerald-950/20 border border-emerald-500/30 p-2.5 rounded-lg">
-            <span class="text-emerald-400 font-mono font-bold block">✔ Resolution</span>
-            <p class="text-slate-300">Mutated ServerWebExchange reactive headers directly (X-User-Id, X-User-Role), eliminating ThreadLocal dependencies.</p>
-          </div>
-        </div>
-
-        <div class="glow-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div class="space-y-1 md:max-w-md">
-            <span class="text-rose-400 font-mono font-bold block">Challenge 2: Synchronous DB Logging Bottleneck</span>
-            <p class="text-slate-300">Direct DB logging spiked gateway latency from 15ms to over 1,200ms due to connection pool exhaustion.</p>
-          </div>
-          <div class="space-y-1 md:max-w-md bg-emerald-950/20 border border-emerald-500/30 p-2.5 rounded-lg">
-            <span class="text-emerald-400 font-mono font-bold block">✔ Resolution</span>
-            <p class="text-slate-300">Deployed Apache Kafka pipeline: gateway publishes log events asynchronously in memory buffer, zero client wait.</p>
-          </div>
-        </div>
-
-        <div class="glow-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div class="space-y-1 md:max-w-md">
-            <span class="text-rose-400 font-mono font-bold block">Challenge 3: UUIDv4 Migration Frontend Parsing Bug</span>
-            <p class="text-slate-300">Switching from integer IDs to UUIDv4 caused parseInt() NaN errors on payment and notification dispatches.</p>
-          </div>
-          <div class="space-y-1 md:max-w-md bg-emerald-950/20 border border-emerald-500/30 p-2.5 rounded-lg">
-            <span class="text-emerald-400 font-mono font-bold block">✔ Resolution</span>
-            <p class="text-slate-300">Updated backend DTOs to java.util.UUID and implemented dynamic user selectors in the React dashboard.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SLIDE 9: Question 5: Key Limitations -->
-    <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 5 OF 5</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Key System Limitations</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 text-xs font-mono">CONSTRAINTS</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="glow-card p-5 space-y-2">
-          <span class="text-amber-400 font-bold block">1. Single-Broker Infrastructure</span>
-          <p class="text-slate-300 leading-relaxed">
-            Current setup deploys single instances of Redis and Kafka. While suitable for single-region clusters, it represents a single point of failure (SPOF) compared to multi-broker Kafka partitions.
-          </p>
-        </div>
-
-        <div class="glow-card p-5 space-y-2">
-          <span class="text-amber-400 font-bold block">2. ML Cold-Start Horizon</span>
-          <p class="text-slate-300 leading-relaxed">
-            Scikit-Learn regression models rely on historical rolling traffic. During the first 5 minutes after a cold reboot, forecast confidence intervals are wider until baseline traffic is sampled.
-          </p>
-        </div>
-
-        <div class="glow-card p-5 space-y-2">
-          <span class="text-amber-400 font-bold block">3. Coarse-Grained Token Cost</span>
-          <p class="text-slate-300 leading-relaxed">
-            Every HTTP request decrements the token bucket by 1 token regardless of computational weight (a lightweight health ping costs the same as a heavy SQL search aggregation).
-          </p>
-        </div>
-
-        <div class="glow-card p-5 space-y-2">
-          <span class="text-amber-400 font-bold block">4. Internal Transport Unencrypted</span>
-          <p class="text-slate-300 leading-relaxed">
-            Communication between the gateway and internal microservices uses plain HTTP inside the Docker bridge network rather than mutual TLS (mTLS).
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- SLIDE 10: Question 5: Future Scope & Roadmap -->
-    <section class="slide flex-col space-y-5">
-      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div>
-          <span class="text-[11px] font-mono text-indigo-400 uppercase tracking-widest font-bold">QUESTION 5 (ROADMAP)</span>
-          <h2 class="text-2xl font-bold text-white tracking-tight">Future Scope &amp; Production Roadmap</h2>
-        </div>
-        <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 text-xs font-mono">NEXT GENERATION</span>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-sans">
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-emerald-400 font-mono font-bold block">☸️ KEDA Predictive Autoscaling</span>
-          <p class="text-slate-300">
-            Link the 10-minute traffic forecast directly to Kubernetes KEDA to spin up replica pods <em>before</em> traffic spikes hit, rather than waiting for CPU thresholds.
-          </p>
-        </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-indigo-400 font-mono font-bold block">🔒 Istio Zero-Trust Service Mesh</span>
-          <p class="text-slate-300">
-            Deploy Envoy sidecars with mTLS across all microservices, ensuring cryptographically verified and encrypted east-west cluster traffic.
-          </p>
-        </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-purple-400 font-mono font-bold block">🧬 Reinforcement Learning Routing</span>
-          <p class="text-slate-300">
-            Upgrade the static health score formula to a Multi-Armed Bandit (MAB) reinforcement model that autonomously experiments with dynamic routing weights.
-          </p>
-        </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-sky-400 font-mono font-bold block">⚡ Weighted Token Bucket</span>
-          <p class="text-slate-300">
-            Differentiate rate limit consumption based on endpoint complexity, charging higher token costs for heavy database read/write queries.
-          </p>
-        </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-amber-400 font-mono font-bold block">🌐 gRPC &amp; GraphQL Ingress</span>
-          <p class="text-slate-300">
-            Expand the edge gateway to support multiplexed binary gRPC streaming and federated GraphQL schemas alongside standard REST.
-          </p>
-        </div>
-
-        <div class="glow-card p-4 space-y-2">
-          <span class="text-rose-400 font-mono font-bold block">📈 Distributed OpenTelemetry</span>
-          <p class="text-slate-300">
-            Inject W3C trace contexts to visualize full waterfall spans and latency bottlenecks across microservice hops in Jaeger.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- SLIDE 11: Summary & Live Verification -->
-    <section class="slide flex-col justify-center items-center text-center space-y-6 py-6">
-      <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-3xl">
-        🚀
-      </div>
-
-      <h2 class="text-3xl font-extrabold text-white tracking-tight">
-        System Fully Verified &amp; Production Ready
-      </h2>
-      <p class="text-sm text-slate-300 max-w-2xl leading-relaxed">
-        Nexus Gateway unites reactive edge routing, stateless security, streaming Kafka telemetry, and proactive Scikit-Learn AI traffic optimization into an enterprise control plane.
-      </p>
-
-      <div class="flex flex-wrap items-center justify-center gap-3 font-mono text-xs">
-        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.1] text-emerald-400">
-          ✔ Gateway Ingress: :8080
-        </span>
-        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.1] text-sky-400">
-          ✔ React Console: :3000
-        </span>
-        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.1] text-purple-400">
-          ✔ ML Prediction: :8000
-        </span>
-        <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.1] text-indigo-400">
-          ✔ Kafka Offset: Active
-        </span>
-      </div>
-
-      <div class="pt-4 text-xs font-mono text-slate-500">
-        Presentation complete. Ready for Questions &amp; Architectural Defense.
       </div>
     </section>
 
   </main>
 
-  <!-- Speaker Notes Drawer (Toggled by N key) -->
-  <aside id="speakerNotes" class="hidden border-t border-white/[0.1] bg-slate-900/95 backdrop-blur-2xl p-4 text-xs font-sans text-slate-300 fixed bottom-14 left-0 right-0 z-20 max-w-4xl mx-auto rounded-t-xl shadow-2xl border-x">
-    <div class="flex items-center justify-between font-mono font-bold text-indigo-400 mb-1">
-      <span>SPEAKER NOTES / PRESENTATION TALKING POINTS</span>
-      <button onclick="toggleNotes()" class="text-slate-400 hover:text-white">✕</button>
+  <!-- Simple Speaker Notes Box (Toggle with [N]) -->
+  <aside id="notesBox" class="bg-slate-900 border-t border-white/[0.1] p-4 text-xs text-slate-300 max-w-4xl mx-auto w-full rounded-t-xl">
+    <div class="flex justify-between font-mono text-indigo-400 font-bold mb-1">
+      <span id="scriptTitle">SPEECH SCRIPT (WHAT TO SAY):</span>
+      <span class="text-slate-500 text-[10px]">Read this out loud for this slide</span>
     </div>
-    <div id="notesContent" class="leading-relaxed text-slate-300">
-      Welcome everyone to the Nexus Gateway defense presentation.
-    </div>
+    <p id="speechScript" class="text-slate-200 leading-relaxed">
+      "Hello everyone. Today I am presenting Nexus Gateway, an AI-powered smart API gateway designed to securely protect microservices and prevent server crashes."
+    </p>
   </aside>
 
-  <!-- Bottom Navigation Deck -->
-  <footer class="w-full border-t border-white/[0.08] bg-slate-900/60 backdrop-blur-xl px-6 py-3 flex items-center justify-between text-xs font-mono text-slate-400 z-30">
-    <div class="flex items-center gap-2">
-      <span class="hidden sm:inline">Use</span>
-      <kbd class="px-2 py-0.5 rounded bg-white/[0.08] text-slate-200 border border-white/[0.1]">←</kbd>
-      <kbd class="px-2 py-0.5 rounded bg-white/[0.08] text-slate-200 border border-white/[0.1]">→</kbd>
-      <span class="hidden sm:inline">arrow keys to navigate</span>
-    </div>
-
-    <!-- Quick Jump Dots -->
-    <div class="flex items-center gap-1.5" id="slideDots">
-      <!-- Injected by script -->
-    </div>
-
-    <div class="flex items-center gap-2">
-      <button onclick="toggleFullscreen()" class="hover:text-white transition">Fullscreen [F]</button>
-    </div>
+  <!-- Bottom Navigation -->
+  <footer class="w-full bg-slate-900/80 border-t border-white/[0.08] px-6 py-2.5 flex items-center justify-between text-xs font-mono text-slate-400">
+    <div>Use <kbd class="px-1.5 py-0.5 rounded bg-white/[0.1] text-white">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-white/[0.1] text-white">→</kbd> arrow keys</div>
+    <div id="slideDots" class="flex items-center gap-1.5"></div>
+    <div>Nexus Gateway v1.0</div>
   </footer>
 
   <script>
     const slides = document.querySelectorAll('.slide');
-    const totalSlides = slides.length;
-    let currentSlide = 0;
+    const total = slides.length;
+    let current = 0;
 
-    const notes = [
-      "Welcome evaluators. Today we present Nexus Gateway, an enterprise distributed microservice system that re-imagines API Gateways not just as dumb reverse proxies, but as intelligent, self-healing control planes driven by real-time streaming telemetry and machine learning traffic forecasting.",
-      "Question 1 addresses the real-world problem: without an API gateway, microservice architectures suffer from ingress sprawl, duplicated security, and dumb load balancers that crash degraded servers. Nexus solves this with zero-trust edge auth, health-weighted routing, and proactive AI rate-limiting.",
-      "Highlight our measurable benchmarks: sub-50ms gateway ingress overhead due to non-blocking Netty, zero-downtime policy injection via Redis TTLs, and automatic failover across dual-replica microservices.",
-      "Question 2 asks why we chose this specific stack: Spring Cloud Gateway provides non-blocking WebFlux reactive I/O. Kafka decouples logging completely from client requests. Redis gives sub-millisecond sliding token buckets. Scikit-Learn in FastAPI provides state-of-the-art anomaly and traffic forecasting.",
-      "Question 3 covers architecture: walk through the clean separation between edge routing (:8080), dual-replica microservices, and our infrastructure backbones (Redis, Kafka, PostgreSQL, Python ML).",
-      "Walk through the exact 6-stage lifecycle: Ingress route match ➔ JWT verification ➔ Redis token bucket check ➔ Smart routing health score ➔ Upstream processing ➔ Asynchronous Kafka log event streaming.",
-      "Explain the exact health score formula: 0.5 Latency + 0.3 CPU + 0.2 Error Rate. Then highlight our two Scikit-Learn models: RandomForest for 10-minute traffic load forecasting, and IsolationForest for multivariate anomaly detection.",
-      "Question 4 covers the major engineering challenges: solving the reactive WebFlux ThreadLocal issue with reactive exchange mutation, replacing synchronous DB logging with Kafka to fix a 1,200ms latency spike, and resolving UUIDv4 parsing bugs on the frontend.",
-      "Question 5 addresses limitations transparently: single-broker Kafka/Redis in local setups, ML cold-start requirements, coarse-grained token bucket costs, and plain HTTP within internal container bridges.",
-      "Discuss the future roadmap: KEDA predictive autoscaling triggered by ML forecasts, Istio mTLS service mesh, Reinforcement Learning (Multi-Armed Bandit) routing, and distributed tracing with OpenTelemetry.",
-      "Conclude with the verification summary: all services are live and healthy on Docker (:8080 gateway, :3000 dashboard, :8000 ML, Kafka active). Invite the evaluators to test the live console."
+    const scripts = [
+      "\"Hello everyone. Today I am presenting Nexus Gateway, an AI-powered smart API gateway that serves as the single secure entrance for microservice systems. It stops server overloads and optimizes traffic dynamically.\"",
+      "\"Answering Question 1: The main problem in microservices is that without a gateway, clients talk directly to services, creating security risks and crashes. Nexus solves this by putting a single secure door at port 8080 with JWT authentication, smart load balancing, and AI that predicts traffic spikes before they cause outages.\"",
+      "\"Answering Question 2: We chose Spring Cloud Gateway for its non-blocking Netty engine which handles thousands of requests per second. Redis provides sub-millisecond rate limiting. Kafka logs traffic in the background without slowing the user down. Python runs our AI models, PostgreSQL stores secure UUID data, and React gives us a live dashboard.\"",
+      "\"Answering Question 3: The request flow is simple: the user calls the gateway, the gateway checks JWT authentication, verifies the Redis rate limit, routes the request to the healthiest server replica based on real-time latency and CPU, and streams an audit log to Kafka in the background.\"",
+      "\"Answering Question 4: Our biggest challenges were database logging slowing down requests to 1.2 seconds, which we fixed by adding Kafka for async streaming; lost user context in reactive threads, which we fixed by injecting claims into request headers; and UUID parsing bugs, which we fixed across backend DTOs and frontend forms.\"",
+      "\"Answering Question 5: Our current limitations include a single-broker Redis and Kafka setup and an initial 5-minute learning period for the AI. In the future, we plan to connect the AI forecasts to Kubernetes for automatic predictive pod scaling, add mTLS encryption, and implement weighted rate limits.\""
     ];
 
-    function updateSlide() {
-      slides.forEach((s, idx) => {
-        s.classList.toggle('active', idx === currentSlide);
-      });
-      document.getElementById('slideCounter').innerText = `Slide ${currentSlide + 1} / ${totalSlides}`;
-      document.getElementById('progressBar').style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
-      document.getElementById('notesContent').innerText = notes[currentSlide] || "No notes for this slide.";
+    function update() {
+      slides.forEach((s, i) => s.classList.toggle('active', i === current));
+      document.getElementById('slideCounter').innerText = `Slide ${current + 1} / ${total}`;
+      document.getElementById('progressBar').style.width = `${((current + 1) / total) * 100}%`;
+      document.getElementById('speechScript').innerText = scripts[current];
 
-      // Update dots
-      const dotsContainer = document.getElementById('slideDots');
-      dotsContainer.innerHTML = '';
-      for (let i = 0; i < totalSlides; i++) {
+      const dots = document.getElementById('slideDots');
+      dots.innerHTML = '';
+      for (let i = 0; i < total; i++) {
         const dot = document.createElement('button');
-        dot.className = `w-2 h-2 rounded-full transition-all ${i === currentSlide ? 'bg-indigo-400 w-5' : 'bg-slate-700 hover:bg-slate-500'}`;
-        dot.onclick = () => goToSlide(i);
-        dotsContainer.appendChild(dot);
+        dot.className = `w-2 h-2 rounded-full transition-all ${i === current ? 'bg-indigo-400 w-5' : 'bg-slate-700'}`;
+        dot.onclick = () => { current = i; update(); };
+        dots.appendChild(dot);
       }
     }
 
-    function nextSlide() {
-      if (currentSlide < totalSlides - 1) {
-        currentSlide++;
-        updateSlide();
-      }
-    }
-
-    function prevSlide() {
-      if (currentSlide > 0) {
-        currentSlide--;
-        updateSlide();
-      }
-    }
-
-    function goToSlide(n) {
-      if (n >= 0 && n < totalSlides) {
-        currentSlide = n;
-        updateSlide();
-      }
-    }
-
-    function toggleNotes() {
-      const drawer = document.getElementById('speakerNotes');
-      drawer.classList.toggle('hidden');
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
+    function nextSlide() { if (current < total - 1) { current++; update(); } }
+    function prevSlide() { if (current > 0) { current--; update(); } }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
-        nextSlide();
-      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        prevSlide();
-      } else if (e.key.toLowerCase() === 'n') {
-        toggleNotes();
-      } else if (e.key.toLowerCase() === 'f') {
-        toggleFullscreen();
-      }
+      if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+      else if (e.key === 'ArrowLeft') prevSlide();
     });
 
-    // Initialize
-    updateSlide();
+    update();
   </script>
 </body>
 </html>
